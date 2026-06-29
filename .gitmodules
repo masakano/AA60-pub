@@ -1,0 +1,18 @@
+[submodule "lib/external/tinyexr"]
+	path = lib/external/tinyexr
+	url = https://github.com/syoyo/tinyexr.git
+[submodule "lib/external/stb"]
+	path = lib/external/stb
+	url = https://github.com/nothings/stb.git
+[submodule "lib/external/picojson"]
+	path = lib/external/picojson
+	url = https://github.com/kazuho/picojson.git
+[submodule "lib/external/imgui"]
+	path = lib/external/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "lib/external/ImGuizmo"]
+	path = lib/external/ImGuizmo
+	url = https://github.com/cedricguillemet/imguizmo
+[submodule "lib/external/bullet3"]
+	path = lib/external/bullet3
+	url = https://github.com/bulletphysics/bullet3
