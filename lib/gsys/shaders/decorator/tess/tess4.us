@@ -1,0 +1,123 @@
+//
+//
+//
+#pragma once
+#define def_use_debug_colors
+
+#include <default/debug.us>
+#include <decorator/instance/instance.us>
+
+common:
+
+uniform float u_tess_min_len = 0.02;
+uniform float u_tess_max = 32;
+
+vert:
+
+void tess_main()
+{
+	instance_animation_set();
+
+	vec4 position_view = instance_position_view();
+	vec3 normal_view = instance_normal_view();
+	vec4 texcoord = instance_texcoord();
+
+	EMIT_VERTBLOCK(vertblock_out, texcoord, position_view, normal_view);
+}
+
+tesc:
+
+layout(vertices = 4) out;
+void tess_main()
+{
+	if (gl_InvocationID == 0) {
+		vec4 s0 = ub_composition.viewscreen * vertblock_in[0].position_view;
+		vec4 s1 = ub_composition.viewscreen * vertblock_in[1].position_view;
+		vec4 s2 = ub_composition.viewscreen * vertblock_in[2].position_view;
+		vec4 s3 = ub_composition.viewscreen * vertblock_in[3].position_view;
+		
+
+		if (s0.w > 0 || s1.w > 0 || s2.w > 0 || s3.w > 0) {
+			s0.xy /= abs(s0.w);
+			s1.xy /= abs(s1.w);
+			s2.xy /= abs(s2.w);
+			s3.xy /= abs(s3.w);
+
+			float len0 = clamp(distance(s0.xy, s3.xy) / u_tess_min_len, 1, u_tess_max);
+			float len1 = clamp(distance(s1.xy, s0.xy) / u_tess_min_len, 1, u_tess_max);
+			float len2 = clamp(distance(s2.xy, s1.xy) / u_tess_min_len, 1, u_tess_max);
+			float len3 = clamp(distance(s3.xy, s2.xy) / u_tess_min_len, 1, u_tess_max);
+
+			float len = (len0 + len1 + len2 + len3) / 4;
+
+			len0 = 1 << findMSB(uint(len0));
+			len1 = 1 << findMSB(uint(len1));
+			len2 = 1 << findMSB(uint(len2));
+			len3 = 1 << findMSB(uint(len3));
+			len = 1 << findMSB(uint(len));
+
+			gl_TessLevelInner[0] = len;
+			gl_TessLevelInner[1] = len;
+
+			gl_TessLevelOuter[0] = len0;
+			gl_TessLevelOuter[1] = len1;
+			gl_TessLevelOuter[2] = len2;
+			gl_TessLevelOuter[3] = len3;
+		}
+		else {
+			// fallback
+			gl_TessLevelInner[0] = 1;
+			gl_TessLevelInner[1] = 1;
+			gl_TessLevelOuter[0] = 1;
+			gl_TessLevelOuter[1] = 1;
+			gl_TessLevelOuter[2] = 1;
+			gl_TessLevelOuter[3] = 1;
+		}
+	}
+	COPY_VERTBLOCK(vertblock_out[gl_InvocationID], vertblock_in[gl_InvocationID]);
+}
+
+tese:
+
+layout(quads, equal_spacing, ccw) in;
+
+vec4 tess_lerp(const vec4 v0, const vec4 v1, const vec4 v2, const vec4 v3)
+{
+	vec4 a = mix(v0, v1, gl_TessCoord.x);
+	vec4 b = mix(v3, v2, gl_TessCoord.x);
+	return mix(a, b, gl_TessCoord.y);
+}
+
+vec3 tess_lerp(const vec3 v0, const vec3 v1, const vec3 v2, const vec3 v3)
+{
+	vec3 a = mix(v0, v1, gl_TessCoord.x);
+	vec3 b = mix(v3, v2, gl_TessCoord.x);
+	return mix(a, b, gl_TessCoord.y);
+}
+
+void tess_main()
+{
+	vec4 pv0 = vertblock_in[0].position_view;
+	vec4 pv1 = vertblock_in[1].position_view;
+	vec4 pv2 = vertblock_in[2].position_view;
+	vec4 pv3 = vertblock_in[3].position_view;
+
+	vec3 nv0 = vertblock_in[0].normal_view;
+	vec3 nv1 = vertblock_in[1].normal_view;
+	vec3 nv2 = vertblock_in[2].normal_view;
+	vec3 nv3 = vertblock_in[3].normal_view;
+
+	vec4 tc0 = vertblock_in[0].texcoord;
+	vec4 tc1 = vertblock_in[1].texcoord;
+	vec4 tc2 = vertblock_in[2].texcoord;
+	vec4 tc3 = vertblock_in[3].texcoord;
+
+	EMIT_VERTBLOCK(
+	        vertblock_out, tess_lerp(tc0, tc1, tc2, tc3), tess_lerp(pv0, pv1, pv2, pv3),
+	        tess_lerp(nv0, nv1, nv2, nv3));
+}
+
+geom:
+layout(triangles, invocations = 1) in;
+
+common:  // pop back

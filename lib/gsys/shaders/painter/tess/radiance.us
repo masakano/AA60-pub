@@ -1,0 +1,50 @@
+//
+//
+//
+#define def_use_shadowmap
+#define def_use_pbr_ibl_irradmap
+#define def_use_pbr_ibl_lightmap
+#define def_use_pbr_setup
+
+#include <decorator/tess/tess.us>
+#include <decorator/material/pbr_material.us>
+#include <decorator/instance/instance.us>
+#include <decorator/shadowmap/shadowmap.us>
+
+vert:
+void main() { tess_main(); }
+
+tesc:
+void main() { tess_main(); }
+
+tese:
+void main() { tess_main(); }
+
+geom:
+layout(triangle_strip, max_vertices = 4) out;
+void main()
+{
+	for(int i = 0; i < vertblock_in.length(); i++) {
+		vec4 position_view = vertblock_in[i].position_view;
+		COPY_VERTBLOCK(vertblock_out, vertblock_in[i]);
+		gl_Position = ub_composition.viewscreen * position_view;
+		EmitVertex();
+	}
+	EndPrimitive();
+}
+
+frag:
+layout (location = 0) out vec4 final_color0;  // diffuse (for reference)
+
+void main ()
+{
+	pbr_packet_t p;
+	pbr_setup(p, vertblock_in.position_view.xyz, vertblock_in.normal_view, vertblock_in.texcoord.xy);
+	
+	if (p.albedo.a < ub_material.min_alpha) discard;
+
+	float shadow_prob = shadowmap(p.position_view);
+	p.light_radiance *= shadow_prob;
+	final_color0 = pbr_exec(p);
+}
+

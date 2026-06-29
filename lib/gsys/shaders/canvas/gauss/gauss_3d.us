@@ -1,0 +1,58 @@
+//
+//
+//
+comp:
+
+layout (local_size_x = def_local_size, local_size_y = def_local_size, local_size_z = def_local_size) in;
+
+uniform float u_weight[15];
+uniform vec3  u_footstep;
+uniform ivec3 u_delta;
+uniform ivec3 u_size;
+
+layout(r32f) readonly uniform image3D u_volume0;
+layout(r32f) writeonly uniform image3D u_volume1;
+
+
+vec4 load(const ivec3 p)
+{
+	if (p.x < 0 || p.y < 0 || p.z < 0 || 
+	     p.x >= u_size.x || p.y >= u_size.y || p.z >= u_size.z) {
+		return vec4(0.0);
+	}
+	return imageLoad(u_volume0, p);
+}
+
+void main()
+{
+
+        uint ix = gl_GlobalInvocationID.x;
+        uint iy = gl_GlobalInvocationID.y;
+        uint iz = gl_GlobalInvocationID.z;
+	ivec3 p = ivec3(ix, iy, iz);
+
+	vec4 color = vec4(0.0);;
+	
+	color += load(p - 7 * u_delta) * u_weight[ 0];
+	color += load(p - 6 * u_delta) * u_weight[ 1];
+	color += load(p - 5 * u_delta) * u_weight[ 2];
+	color += load(p - 4 * u_delta) * u_weight[ 3];
+	color += load(p - 3 * u_delta) * u_weight[ 4];
+	color += load(p - 2 * u_delta) * u_weight[ 5];
+	color += load(p - 1 * u_delta) * u_weight[ 6];
+	color += load(p + 0 * u_delta) * u_weight[ 7];
+	color += load(p + 1 * u_delta) * u_weight[ 8];
+	color += load(p + 2 * u_delta) * u_weight[ 9];
+	color += load(p + 3 * u_delta) * u_weight[10];
+	color += load(p + 4 * u_delta) * u_weight[11];
+	color += load(p + 5 * u_delta) * u_weight[12];
+	color += load(p + 6 * u_delta) * u_weight[13];
+	color += load(p + 7 * u_delta) * u_weight[14];
+
+        imageStore(u_volume1, ivec3(ix,iy, iz), color);
+}
+
+
+
+
+

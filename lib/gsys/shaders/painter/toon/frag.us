@@ -1,0 +1,30 @@
+//
+//
+//
+#define def_use_shadowmap
+#include <decorator/shadowmap/shadowmap.us>
+
+frag:
+uniform vec4 u_edge_color;
+uniform float u_edge_mix_rate;
+uniform float u_toon_threshold;
+uniform float u_toon_ao;
+
+vec4 toon_radiance_main()
+{
+	vec2 texcoord = vertblock_in.texcoord.xy;
+	vec3 position_view = vertblock_in.position_view.xyz;
+	vec3 normal_view = texture_normalmap(texcoord, position_view, vertblock_in.normal_view);
+	vec4 albedo = texture_albedomap(texcoord) * ub_material.albedo;
+	
+	vec3 light_direction_view = normalize(ub_light.sources[0].direction);
+	
+	if (albedo.a < ub_material.min_alpha) discard;
+
+	float irradiance = max(0.0, dot(light_direction_view, normal_view)) * shadowmap(position_view);
+	vec3 toon_color = albedo.rgb * (irradiance > u_toon_threshold? 1.0: u_toon_ao);
+
+	toon_color += ub_material.emission.rgb;
+	return vec4(toon_color, albedo.a);
+}
+common:

@@ -1,0 +1,25 @@
+//
+//
+//
+#pragma once
+#include <default/ub_connect.us>
+frag:
+
+layout(r32f) uniform readonly image2D u_luminance_texture; 
+uniform sampler2D u_color0;
+uniform bool u_tonemap_is_adaptive_exposure;
+
+float tonemap_average_luminance()
+{
+	return u_tonemap_is_adaptive_exposure? imageLoad(u_luminance_texture, ivec2(0,0)).r: 1.0;
+}
+
+vec4 tonemap_load_color0(const vec2 texcoord)
+{
+	return textureLod(u_color0, texcoord, ub_connect.sources[0].level) / tonemap_average_luminance();
+}
+
+common:
+
+
+

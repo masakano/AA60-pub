@@ -1,0 +1,40 @@
+//
+//
+//
+vert:
+//in float position; // dummy
+out VS_OUT
+{
+	vec3    tc;
+} vs_out;
+
+uniform mat4 u_worldview;
+
+void main()
+{
+	vec3[4] vertices = vec3[4](
+		vec3(-1.0, -1.0, 1.0),
+		vec3( 1.0, -1.0, 1.0),
+		vec3(-1.0,  1.0, 1.0),
+		vec3( 1.0,  1.0, 1.0));
+
+	vs_out.tc = mat3(u_worldview) * vertices[gl_VertexID];
+	gl_Position = vec4(vertices[gl_VertexID], 1.0);
+}
+
+frag:
+
+uniform samplerCube tex_cubemap;
+
+in VS_OUT
+{
+	vec3    tc;
+} fs_in;
+
+layout (location = 0) out vec4 color;
+
+void main()
+{
+	color = texture(tex_cubemap, fs_in.tc);
+	//color = vec4(0.5);
+}

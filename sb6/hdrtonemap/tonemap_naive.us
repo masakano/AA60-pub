@@ -1,0 +1,30 @@
+//
+//
+//
+vert:
+out vec2 f_texcoord;
+void main()
+{
+    const vec4 vertices[] = vec4[](
+	    vec4(-1.0, -1.0, 0.5, 1.0),
+	    vec4( 1.0, -1.0, 0.5, 1.0),
+	    vec4(-1.0,  1.0, 0.5, 1.0),
+	    vec4( 1.0,  1.0, 0.5, 1.0));
+
+    gl_Position = vertices[gl_VertexID];
+    f_texcoord = gl_Position.xy * 0.5 + 0.5;
+}
+
+frag:
+
+uniform sampler2D u_hdr_image;
+
+in  vec2 f_texcoord;
+out vec4 color;
+
+void main()
+{
+	//color = texture(u_hdr_image, 2.0 * gl_FragCoord.xy / textureSize(u_hdr_image, 0));
+	color = texture(u_hdr_image, f_texcoord);
+
+}

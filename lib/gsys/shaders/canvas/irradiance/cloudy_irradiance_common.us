@@ -1,0 +1,44 @@
+//
+//
+//
+#include <default/math.us>
+#include <default/noise/noise3D.us>
+#include <canvas/vert.us>
+
+#define c_exposure 20.0
+#define c_sun_angular_radius 0.005
+
+vert:
+void main()
+{
+	canvas_main();
+}
+
+frag:
+
+uniform sampler2D u_skydomemapR;
+uniform sampler2D u_skydomemapM;
+
+void skydome_render_sky(const vec3 raydir, const float cutoff, inout vec3 colorR, inout vec3 colorM)
+{
+	float r = acos(raydir.y) / (M_PI / 2);
+	r = min(cutoff, r); // need parameterize
+	vec2 dir = normalize(raydir.xz);
+	vec2 texcoord = r * dir * 0.5 + 0.5;
+
+	colorR = texture(u_skydomemapR, texcoord).rgb;
+	colorM = texture(u_skydomemapM, texcoord).rgb;
+}
+
+vec3 skydome_render_sun(const vec3 sundir, const vec3 raydir)
+{
+	float d = distance(normalize(raydir), normalize(sundir)) / c_sun_angular_radius;
+	return vec3(c_exposure) * exp(-d * d);  // better than smoothstep()
+}
+
+vec3 uv_to_raydir(const vec2 uv)
+{
+	float phi = (uv.x - 0.5) * 2 * M_PI;
+	float theta = (uv.y - 0.5) * M_PI;
+	return vec3(sin(phi) * cos(theta), sin(theta), -cos(phi) * cos(theta));
+}

@@ -1,0 +1,47 @@
+//
+//
+//
+#include <default/math.us>
+
+comp:
+
+layout (local_size_x = def_local_size, local_size_y = 1) in;
+layout(r32ui) uniform uimage3D u_uint_density_texture;
+readonly buffer a_position { vec4 v[]; } b_position;
+
+//uniform mat4 u_worldvolume;
+uniform int u_particle_count;
+uniform float u_radius;
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+	if (index >= u_particle_count) return;
+
+	ivec3 isize = imageSize(u_uint_density_texture);
+	vec3 size = vec3(isize);
+
+	vec3 center = (vec3(b_position.v[index]) * 0.5 + 0.5) * size;
+	ivec3 icenter = ivec3(center);
+	vec3 radius = u_radius * size;
+	ivec3 iradius = ivec3(radius);
+
+	for (int iz = -iradius.z; iz <= iradius.z; iz++) {
+		for (int iy = -iradius.y; iy <= iradius.y; iy++) {
+			for (int ix = -iradius.x; ix <= iradius.x; ix++) {
+				vec3 pos = center + ivec3(ix, iy, iz);
+				ivec3 ipos = ivec3(pos);
+				if (ipos.x >= 0 && ipos.x < isize.x && 
+				    ipos.y >= 0 && ipos.y < isize.y && 
+				    ipos.z >= 0 && ipos.z < isize.z) {
+					vec3 d = (pos - center) / radius;
+
+					// Poly6
+					float h2_r2 = max(1.0 - dot(d, d), 0.0);
+					float gain = h2_r2 * h2_r2 * h2_r2; 
+					imageAtomicAdd(u_uint_density_texture, ipos, uint(gain * def_uint_scale));
+				}
+			}
+		}
+	}
+}

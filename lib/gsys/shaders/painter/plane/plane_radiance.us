@@ -1,0 +1,23 @@
+//
+//
+//
+#pragma once
+#include "common.us"
+frag:
+vec4 plane_radiance(const vec3 raydir_view)
+{
+	vec3 position_view = plane_cross_point(raydir_view, ub_plane_composition.plane_view);
+	vec3 position_texcoord = plane_view_to_texcoord(position_view);
+	gl_FragDepth = position_texcoord.z;
+
+	pbr_packet_t p;
+	vec2 position_map = (ub_plane_composition.viewmap * vec4(position_view, 1)).xy;
+
+	vec3 normal_view = normalize(ub_plane_composition.plane_view.xyz);
+	pbr_setup(p, position_view.xyz, normal_view, position_map);
+	
+	p.light_radiance *= shadowmap(position_view); // need parameterize
+	plane_set_reflect_color(position_view, normal_view, p.normal_view);
+	return pbr_exec(p);
+}
+common:

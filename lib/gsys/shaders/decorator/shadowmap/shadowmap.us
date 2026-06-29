@@ -1,0 +1,39 @@
+//
+//
+//
+#pragma once
+
+#include "default/ub_shadowmap.us"
+
+#ifndef def_shadowmap_debug
+#define def_shadowmap_debug 0
+#endif
+
+#ifndef def_shadowmap_path
+#define def_shadowmap_path "shadowmap_none.us"
+#endif
+
+#ifndef def_shadowmap_probability_path
+#define def_shadowmap_probability_path "shadowmap_probability_none.us"
+#endif
+
+vert:
+void shadowmap();
+
+frag:
+bool shadowmap_is_valid(const vec4 receiver_shadowtexc)
+{
+	const vec2 p = receiver_shadowtexc.xy;
+	const float w = receiver_shadowtexc.w;
+	return all(greaterThan(p, vec2(0.0))) && all(lessThan(p, vec2(w)));
+}
+
+float shadowmap(const vec3 position_view);
+
+#ifdef def_use_shadowmap
+#include def_shadowmap_probability_path
+#include def_shadowmap_path
+#endif
+
+
+

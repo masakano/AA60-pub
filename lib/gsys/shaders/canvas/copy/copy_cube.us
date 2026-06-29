@@ -1,0 +1,78 @@
+//
+//
+//
+#include "copy_common.us"
+#include <default/math.us>
+
+#ifndef def_cubemap_to_spheremap
+#define def_cubemap_to_spheremap 0
+#endif
+
+frag:
+
+#if def_cubemap_to_spheremap == 1
+vec3 texcoord_to_eyedir(const vec2 texcoord)
+{
+	float phi = (texcoord.x - 0.5f) * 2.0f * M_PI;
+	float theta = (texcoord.y - 0.5f) * M_PI;
+	return vec3(cos(theta) * sin(phi), sin(theta), -cos(theta) * cos(phi));
+}
+#else
+vec3 texcoord_to_eyedir(const vec2 texcoord)
+{
+	vec2 cube_texcoord = texcoord * vec2(6, 1);
+	float n = 0.5;
+	
+	if (cube_texcoord.x < 1.0) {		// py
+		float u = cube_texcoord.x - 0.5 - 0.0;
+		float v = cube_texcoord.y - 0.5;
+		return normalize(vec3(u, n, -v));
+	}
+	else if (cube_texcoord.x < 2.0) {	// ny
+		float u = cube_texcoord.x - 0.5 - 1.0;
+		float v = cube_texcoord.y - 0.5;
+		return normalize(vec3(u, -n, -v));
+	}
+	else if (cube_texcoord.x < 3.0) {	// px
+		float u = cube_texcoord.x - 0.5 - 2.0;
+		float v = cube_texcoord.y - 0.5;
+		return normalize(vec3(n, v, -u));
+	}
+	else if (cube_texcoord.x < 4.0) {	// nz
+		float u = cube_texcoord.x - 0.5 - 3.0;
+		float v = cube_texcoord.y - 0.5;
+		return normalize(vec3(-u, v, -n));
+	}
+	else if (cube_texcoord.x < 5.0) {	// nx
+		float u = cube_texcoord.x - 0.5 - 4.0;
+		float v = cube_texcoord.y - 0.5;
+		return normalize(vec3(-n, v, u));
+	}
+	else {					// pz
+		float u = cube_texcoord.x - 0.5 - 5.0;
+		float v = cube_texcoord.y - 0.5;
+		return normalize(vec3(u, v, n));
+	}
+}
+#endif
+
+uniform samplerCube u_color0_cube;
+uniform samplerCubeArray u_color0_cube_array;
+
+vec4 copy_cube(const vec2 texcoord)
+{
+	vec3 eyedir = texcoord_to_eyedir(texcoord);
+	return textureLod(u_color0_cube, eyedir, float(ub_connect.sources[0].level));
+}
+
+vec4 copy_cube_array(const vec2 texcoord)
+{
+	vec3 eyedir = texcoord_to_eyedir(texcoord);
+	return textureLod(u_color0_cube_array, 
+			  vec4(eyedir, ub_connect.sources[0].layer), float(ub_connect.sources[0].level));
+}
+
+common:
+
+
+

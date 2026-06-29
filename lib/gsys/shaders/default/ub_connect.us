@@ -1,0 +1,21 @@
+//
+//
+//
+#pragma once
+
+#include "ub_begin.h"
+
+UNIF_NAMESPACE(spu)
+
+struct UB_CONNECT_SOURCE {
+	int layer;
+	int level;
+	float gain;
+	float bias;
+};
+
+UNIF_BEGIN(UB_CONNECT) {
+	UB_CONNECT_SOURCE sources[10];
+} UNIF_END(ub_connect);
+
+#include "ub_end.h"

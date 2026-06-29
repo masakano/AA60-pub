@@ -1,0 +1,92 @@
+//
+//
+//
+vert:
+//#version 410 core
+
+// Per-vertex inputs
+in vec4 a_position;
+in vec3 a_normal;
+
+uniform mat4 u_modelview;
+uniform mat4 u_viewscreen;
+
+// Inputs from vertex shader
+out VS_OUT
+{
+    vec3 N;
+    vec3 L;
+    vec3 V;
+} vs_out;
+
+// Position of light
+uniform vec3 u_light_position;
+
+void main()
+{
+    // Calculate view-space coordinate
+    vec4 P = u_modelview * a_position;
+
+    // Calculate normal in view-space
+    vs_out.N = mat3(u_modelview) * a_normal;
+
+    // Calculate light vector
+    vs_out.L = u_light_position - P.xyz;
+
+    // Calculate view vector
+    vs_out.V = -P.xyz;
+
+    // Calculate the clip-space position of each vertex
+    gl_Position = u_viewscreen * P;
+}
+
+frag:
+//#version 410 core
+
+// Output
+layout (location = 0) out vec4 color;
+
+// Input from vertex shader
+in VS_OUT
+{
+    vec3 N;
+    vec3 L;
+    vec3 V;
+} fs_in;
+
+// Material properties
+
+uniform vec3 u_albedo;
+uniform vec3 u_specular_albedo;
+uniform float u_specular_power;
+uniform vec3 u_rim_color;
+uniform float u_rim_power;
+
+vec3 calculate_rim(vec3 N, vec3 V)
+{
+    float f = 1.0 - dot(N, V);
+
+    f = smoothstep(0.0, 1.0, f);
+    f = pow(f, u_rim_power);
+
+    return f * u_rim_color;
+}
+
+void main()
+{
+    // Normalize the incoming N, L and V vectors
+    vec3 N = normalize(fs_in.N);
+    vec3 L = normalize(fs_in.L);
+    vec3 V = normalize(fs_in.V);
+
+    // Calculate R locally
+    vec3 R = reflect(-L, N);
+
+    // Compute the diffuse and specular components for each fragment
+    vec3 diffuse = max(dot(N, L), 0.0) * u_albedo;
+    vec3 specular = pow(max(dot(R, V), 0.0), u_specular_power) * u_specular_albedo;
+    vec3 rim = calculate_rim(N, V);
+
+    // Write final color to the framebuffer
+    color = vec4(diffuse + specular + rim, 1.0);
+}

@@ -1,0 +1,15 @@
+//
+//
+//
+#pragma once
+#include <default/ub_begin.h>
+
+UNIF_NAMESPACE(spu::gs_painter::pbr)
+UNIF_BEGIN(UB_FBM_HEIGHT) {
+	int use;
+	float lacunarity;
+	float decay;
+	float ridge_rate;
+} UNIF_END(ub_fbm_height);
+
+#include <default/ub_end.h>

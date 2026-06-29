@@ -1,0 +1,30 @@
+//
+//
+//
+#include <canvas/vert.us>
+
+vert:
+void main()
+{
+	canvas_main();
+	
+}
+frag:
+
+uniform sampler2D u_color0;  // source 
+uniform sampler2D u_color1;  // fog
+
+in vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+void main ()
+{
+	const vec4 color0 = textureLod(u_color0, f_texcoord, 0);
+	const vec4 color1 = textureLod(u_color1, f_texcoord, 1);
+	const vec3 radiance = color1.rgb;
+	const float contribution = color1.w;
+	
+	final_color0.rgb = radiance;
+	final_color0.rgb += color0.rgb * contribution;
+	final_color0.a = 1.0;
+}

@@ -1,0 +1,36 @@
+//
+//
+//
+#include "vert.us"
+#include "frag.us"
+#include "calc_height.us"
+
+vert:
+uniform mat4 u_worldmap;
+
+void main()
+{
+	pbr_main();
+
+	vec4 position_world = instance_position_world();
+	vec4 position_view = instance_position_view();
+	vec3 normal_world = instance_normal_world();
+
+#ifdef def_use_worldmap
+	vertblock_out.texcoord = u_worldmap * position_world;
+#endif
+
+	float height = calc_height();
+	position_world.xyz += normal_world * height * ub_material.height_scale; // must be world space
+
+	vertblock_out.position_view = instance_worldview() * position_world;
+	gl_Position = instance_viewscreen() * vertblock_out.position_view;
+}
+
+frag:
+layout (location = 0) out vec4 final_color0;
+
+void main()
+{
+	final_color0 = pbr_main();
+}

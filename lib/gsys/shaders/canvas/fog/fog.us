@@ -1,0 +1,146 @@
+//
+//
+//
+#define def_use_shadowmap
+#define def_use_projected_radius
+
+#include <default/noise/noise3D.us>
+#include <canvas/vert.us>
+#include <decorator/shadowmap/shadowmap.us>
+#include <default/math.us>
+#include "ub_fbm_fog.us"
+
+vert:
+out vec2 f_position_screen;
+void main()
+{
+	canvas_main();
+	f_position_screen = gl_Position.xy;
+}
+
+frag:
+
+uniform mat4 u_worldview;
+uniform mat4 u_viewworld;
+uniform mat4 u_screenview;
+
+uniform float u_esec;
+uniform float u_near;
+uniform float u_far;
+uniform float u_step;
+
+uniform sampler2D u_lightmap;
+uniform sampler2D u_irradmap;
+uniform sampler2D u_depth;
+
+in vec2 f_texcoord;
+in vec2 f_position_screen;
+
+layout (location = 0) out vec4 final_color0;
+out vec4 final_color1;
+
+float turbulence(vec3 p, int octaves, float lacunarity, float decay)
+{
+	float amp = 0.5;
+	float sum = 0;
+	for (int i = 0; i < octaves; i++) {
+		sum += abs(noise_snoise(p).x) * amp;
+		p *= lacunarity;
+		amp *= decay;
+	}
+	return sum;
+}
+
+float fog_occulusion(vec3 p)
+{
+	float d = turbulence(
+		p / ub_fbm_fog.granularity + u_esec * ub_fbm_fog.speed.xyz,
+		ub_fbm_fog.octaves, ub_fbm_fog.lacunarity, ub_fbm_fog.octave_decay);
+	
+	float stepped_d = smoothstep(ub_fbm_fog.density_min, ub_fbm_fog.density_max, d);  // threshold density
+	return ub_fbm_fog.amplitude * stepped_d;
+}
+
+float obstacle_distance(float depth_frag)
+{
+	float depth = depth_frag * 2.0 - 1.0;
+	vec4 position_view = u_screenview * vec4(f_position_screen, depth, 1);
+	return length(position_view.xyz / position_view.w);
+}
+
+float rand()
+{
+	vec2 co = gl_FragCoord.xy + fract(u_esec * 0.01);
+	return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+vec2 texture_sphere_uv(const vec3 raydir)
+{
+	float theta = asin(raydir.y);  // assume normalized
+	float phi = atan(raydir.x, -raydir.z);
+	return vec2(phi / (2.0 * M_PI), theta / M_PI) + 0.5;
+}
+
+vec3 refract_irrad(const vec3 raydir)
+{
+	vec2 uv = texture_sphere_uv(raydir);
+	return textureLod(u_irradmap, uv, 0).rgb;
+}
+
+vec3 reflect_irrad(const vec3 raydir)
+{
+	vec3 reflect_raydir = -raydir;
+	reflect_raydir.y = abs(reflect_raydir.y);
+	vec2 uv = texture_sphere_uv(reflect_raydir);
+	return textureLod(u_irradmap, uv, 0).rgb;
+}
+
+void main ()
+{
+#if 0
+	// ad-hoc
+	const float u_near = 0.2;
+	const float u_far = 4.0;
+	/*
+	const float u_near = 0.01;
+	const float u_far = 1.0;
+	*/
+	const float u_step = 64;
+#endif
+	float depth = texture(u_depth, f_texcoord).r;
+	float far = min(u_far, obstacle_distance(depth));
+
+	vec4 position_view = u_screenview * vec4(f_position_screen, 0, 1);
+	vec3 raydir_view = normalize(position_view.xyz);
+	vec3 raydir_world = mat3(u_viewworld) * raydir_view;
+
+	float t = u_near;
+	float contribution = 1.0;
+	float radiance = 0;
+
+	float dt = ((u_far - u_near) / u_step) * (0.9 + rand() * 0.2); // 10% jitter
+	while (t < far) {
+		t += dt;
+		vec3 ray_position_view = t * raydir_view;
+		vec3 ray_position_world = (u_viewworld * vec4(ray_position_view, 1)).xyz;
+		
+		float occulusion = fog_occulusion(ray_position_world);
+		float shadow_prob = shadowmap(ray_position_view);
+		float transmittance = 1.0 - occulusion;
+		
+		radiance += occulusion * contribution * shadow_prob;
+		contribution *= transmittance;
+	}
+	final_color0.rgb = vec3(radiance) * reflect_irrad(raydir_world);
+	final_color0.a = contribution;
+	
+	if (depth > 0.9999) {
+		final_color0.rgb += refract_irrad(raydir_world) * contribution;
+		final_color0.a = 0.0;
+	}
+}
+
+
+
+
+

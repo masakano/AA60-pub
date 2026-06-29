@@ -1,0 +1,75 @@
+//
+//
+//
+comp:
+
+layout (local_size_x = def_local_size) in;
+
+struct CandidateDraw
+{
+	vec4 sphereCenter;
+	float sphereRadius;
+	uint first;
+	uint count;
+	uint pad;
+};
+
+struct ArrayCommand
+{
+	uint count;
+	uint instance_count;
+	uint base_vertex;
+	uint base_instance;
+};
+
+layout (binding = 0) buffer CommandCounter { uint ui; } commandCounter;
+
+layout (binding = 1, std430) buffer CandidateDraws
+{
+	CandidateDraw draw[];
+};
+
+layout (binding = 2, std430) writeonly buffer OutputDraws
+{
+	ArrayCommand command[];
+};
+
+layout (binding = 0, std140) uniform MODEL_MATRIX_BLOCK
+{
+	mat4    model_matrix[1024];
+};
+
+layout (binding = 1, std140) uniform TRANSFORM_BLOCK
+{
+	mat4    transform_array[3];
+};
+
+
+void main()
+{
+	mat4 modelview = transform_array[0];
+	mat4 viewscreen = transform_array[1];
+	mat4 modelscreen = transform_array[2];
+
+	const CandidateDraw thisDraw = draw[gl_GlobalInvocationID.x];
+	const mat4 thisModelMatrix = model_matrix[gl_GlobalInvocationID.x];
+
+	vec4 position = modelscreen * thisModelMatrix * vec4(thisDraw.sphereCenter.xyz, 1.0);
+#if 1 // debug
+	if ((abs(position.x) - thisDraw.sphereRadius) < (position.w * 0.75) &&
+	    (abs(position.y) - thisDraw.sphereRadius) < (position.w * 0.75))
+#else
+	if ((abs(position.x) - thisDraw.sphereRadius) < (position.w * 1.0) &&
+	    (abs(position.y) - thisDraw.sphereRadius) < (position.w * 1.0))
+#endif		
+	{
+		//uint outDrawIndex = atomicCounterIncrement(commandCounter);
+		uint outDrawIndex = atomicAdd(commandCounter.ui, 1);
+
+		command[outDrawIndex].count = thisDraw.count;
+		command[outDrawIndex].instance_count = 1;
+		command[outDrawIndex].base_vertex = thisDraw.first;
+		command[outDrawIndex].base_instance = uint(gl_GlobalInvocationID.x);
+	}
+
+}

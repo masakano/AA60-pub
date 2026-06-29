@@ -1,0 +1,71 @@
+//
+//
+//
+#pragma once
+#include <default/debug.us> // debug only
+
+frag:
+
+uniform sampler2DArray u_shadowmap;
+
+float pcf_get_distance(const mat4 shadowtexc_to_world, const vec4 position_shadowtexc)
+{
+	vec4 position_view = shadowtexc_to_world * position_shadowtexc;
+	return distance(ub_shadowmap.light_position, position_view.xyz / position_view.w);
+}
+
+vec3 pcf_fill_depth(const int layer, const vec2 position_shadowtexc, const vec2 jitter)
+{
+	vec3 result;
+	result.xy = position_shadowtexc + jitter;
+	result.z = texture(u_shadowmap, vec3(result.xy, layer)).r;
+	return result;
+}
+
+bool pcf_get_radius(
+	const int layer, const mat4 shadowtexc_to_world, const vec4 receiver_shadowtexc, inout float radius)
+{
+	vec4 receiver_world = shadowtexc_to_world * receiver_shadowtexc;
+	float receiver_distance = pcf_get_distance(shadowtexc_to_world, receiver_shadowtexc);
+	float blocker_distance = 0;
+	int samples = 0;
+
+	for (int i = 0; i < ub_shadowmap_pattern.blocker_count; i++) {
+		vec2 jitter = ub_shadowmap_pattern.blockers[i] * radius;
+		vec3 blocker_shadowtexc = pcf_fill_depth(layer, receiver_shadowtexc.xy, jitter);
+		if (blocker_shadowtexc.z < 1.0) {
+			blocker_distance +=
+				pcf_get_distance(shadowtexc_to_world, vec4(blocker_shadowtexc, 1));
+			samples++;
+		}
+	}
+	if (samples == 0) return false;
+	blocker_distance /= samples;
+	radius *= (receiver_distance - blocker_distance) / blocker_distance;
+	return true;
+}
+
+float shadowmap_probability(const int layer, vec4 receiver_shadowtexc)
+{
+	mat4 view_to_shadowtexc = ub_shadowmap.view_to_shadowtexc[layer];
+	mat4 shadowtexc_to_world = inverse(view_to_shadowtexc);
+
+	float radius = projected_radius(
+		view_to_shadowtexc, receiver_shadowtexc.w, ub_shadowmap.light_radius);
+
+	receiver_shadowtexc /= receiver_shadowtexc.w;
+
+	if (pcf_get_radius(layer, shadowtexc_to_world, receiver_shadowtexc, radius) == false) {
+		return 1.0;
+	}
+
+	float p = 0.0;
+	for (int i = 0; i < ub_shadowmap_pattern.receiver_count; i++) {
+		vec2 jitter = ub_shadowmap_pattern.receivers[i] * radius;
+		vec3 blocker_shadowtexc = pcf_fill_depth(layer, receiver_shadowtexc.xy, jitter);
+		p += (blocker_shadowtexc.z < 1.0 && blocker_shadowtexc.z < receiver_shadowtexc.z)? 0.0: 1.0;
+	}
+	return p / ub_shadowmap_pattern.receiver_count;
+}
+
+common: // resume

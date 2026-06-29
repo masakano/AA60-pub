@@ -1,0 +1,65 @@
+//
+//
+//
+#include <canvas/vert.us>
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+
+#define MAX_BLUR_RADIUS 4096
+
+uniform sampler2D u_input_texture;
+uniform int   u_blur_radius = 16;
+//uniform float u_blur_sigma = 2.0f;
+uniform vec2  u_blur_direction = vec2(1.0, 0.0); // (1,0)/(0,1) for x/y pass
+
+in vec2 f_texcoord;
+out vec4 fResult;
+
+/*----------------------------------------------------------------------------*/
+/*	Incremental, forward-differencing Gaussian elimination based on:
+	http://http.developer.nvidia.com/GPUGems3/gpugems3_ch40.html */
+vec4 incrementalGauss1D(
+	in sampler2D srcTex, 
+	in vec2 srcInvTexelSize, 
+	in vec2 origin,
+	in int radius,
+	in vec2 direction
+) {
+
+	int nSamples = clamp(radius, 1, int(MAX_BLUR_RADIUS)) / 2;
+	
+	if (nSamples == 0)
+		return texture(srcTex, origin);
+	
+	const float SIGMA = float(u_blur_radius) / 8.0;
+	float sig2 = SIGMA * SIGMA;
+	const float TWO_PI	= 6.2831853071795;
+	const float E			= 2.7182818284590;
+		
+//	set up incremental counter:
+	vec3 gaussInc;
+	gaussInc.x = 1.0 / (sqrt(TWO_PI) * SIGMA);
+	gaussInc.y = exp(-0.5 / sig2);
+	gaussInc.z = gaussInc.y * gaussInc.y;
+	
+//	accumulate results:
+	vec4 result = texture(srcTex, origin) * gaussInc.x;	
+	for (int i = 1; i < nSamples; ++i) {
+		gaussInc.xy *= gaussInc.yz;
+		
+		vec2 offset = float(i) * direction * srcInvTexelSize;
+		result += texture(srcTex, origin - offset) * gaussInc.x;
+		result += texture(srcTex, origin + offset) * gaussInc.x;
+	}
+	
+	return result;
+}
+
+void main()
+{
+	vec2 invTexelSize = 1.0 / vec2(textureSize(u_input_texture, 0));
+	fResult = incrementalGauss1D(u_input_texture, invTexelSize, f_texcoord, u_blur_radius, u_blur_direction);
+}

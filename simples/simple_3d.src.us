@@ -1,0 +1,25 @@
+
+vert:
+
+in vec4 a_position;
+
+uniform mat4 u_nodeworld;
+uniform mat4 u_worldview;
+uniform mat4 u_viewscreen;
+
+void main()
+{
+	gl_Position = (u_viewscreen * u_worldview * u_nodeworld) * a_position;
+}
+
+frag:
+
+in vec4 f_color; 
+layout (location = 0) out vec4 final_color0;
+
+uniform vec4 u_colors[8];
+
+void main()
+{
+	final_color0 = u_colors[gl_PrimitiveID % 8];
+}

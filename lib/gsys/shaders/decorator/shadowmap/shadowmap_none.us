@@ -1,0 +1,14 @@
+//
+//
+//
+#pragma once
+
+vert:
+void shadowmap() {}
+
+frag:
+float shadowmap(const vec3 position_view)
+{
+	return 1.0;
+}
+common:

@@ -1,0 +1,58 @@
+//
+//
+//
+#include "vert.us"
+#include "geom.us"
+
+frag:
+
+uniform vec3 u_color1;
+uniform vec3 u_color2;
+uniform sampler2D u_cloth_texture;
+uniform sampler2D u_lightmap_texture;
+in vec3 f_normal;
+in vec3 f_tangent;
+in vec3 f_bitangent;
+in vec3 f_lightdir;
+in vec3 f_viewdir;
+in vec2 f_texcoord;
+in vec2 f_stcoord;
+out vec4 frag_color;
+
+void main()
+{
+	vec3 light_color = texture(u_lightmap_texture, f_stcoord).rgb;
+	vec3 decal_color = 0.5*(
+		0.5*texture(u_cloth_texture, f_texcoord*0.5).rgb+
+		1.0*texture(u_cloth_texture, f_texcoord*1.0).rgb+
+		0.5*texture(u_cloth_texture, f_texcoord*2.0).rgb
+	);
+	vec3 normal = normalize(
+		2.0*f_normal +
+		(decal_color.r - 0.5)*f_tangent +
+		(decal_color.g - 0.5)*f_bitangent
+		);
+	vec3 light_dir = normalize(f_lightdir);
+	vec3 light_refl = reflect(-light_dir, normal);
+	float amount = pow(decal_color.b, 2.0);
+	float specular = pow(clamp(dot(                                                 
+					   light_refl,
+					   normalize(f_viewdir)
+					   )+0.1, 0.0, 1.0)*0.9, 16.0+16.0*amount)*(0.2+2.0*amount);
+	float diffuse = clamp(2.0*(dot(
+					   normal,
+					   light_dir
+					   )-0.5), 0.0, 1.0);
+	float ambient = 0.2;
+	vec3 color = mix(u_color1, u_color2, amount);
+	
+	frag_color = vec4(
+		color * ambient +
+		light_color * color * diffuse +
+		light_color * specular,
+		1.0
+		);
+
+	//frag_color = vec4(1.0);
+	
+}                                                                                      

@@ -1,0 +1,52 @@
+//
+//
+//
+#pragma once
+#include "common.us"
+#include "ub_real_wave.us"
+
+frag:
+
+uniform int u_real_wave_count;
+uniform float u_time;
+
+vec3 realwater_normal(const vec2 position_map)
+{
+	vec2 g = vec2(0);				// gradient
+	
+	for (int i = 0; i < u_real_wave_count; i++) {
+		UB_REAL_WAVE_ELEMENT e = ub_real_wave.elements[i];
+		vec2 d = vec2(e.dirX, e.dirY);	
+		float omega = e.omega * (u_time + dot(d, position_map));
+		g += e.amplitude * cos(omega) * e.omega * d;
+	}
+	
+	vec3 tangent = vec3(1, g.x, 0);
+	vec3 binormal = vec3(0, g.y, 1);
+	return cross(tangent, -binormal);
+}
+
+vec4 realwater_plane_radiance(const vec3 raydir_view)
+{
+	const vec4 plane_view = ub_plane_composition.plane_view;
+	
+	vec3 position_view = plane_cross_point(raydir_view, plane_view);
+	vec3 position_texcoord = plane_view_to_texcoord(position_view);
+	gl_FragDepth = position_texcoord.z;
+	
+	pbr_packet_t p;
+
+	vec2 position_map = (ub_plane_composition.viewmap * vec4(position_view, 1)).xy;
+	vec3 normal_view = normalize(plane_view.xyz);
+
+	// NEED FIX
+	vec3 wavy_normal_world = normalize(realwater_normal(position_map));
+	vec3 wavy_normal_view = mat3(ub_plane_composition.worldview) * wavy_normal_world;
+
+	pbr_setup(p, position_view.xyz, wavy_normal_view, position_map);
+	p.light_radiance *= shadowmap(position_view); // need parameterize
+	
+	plane_set_reflect_color(position_view, normal_view, p.normal_view);
+	return pbr_exec(p);
+}
+common:

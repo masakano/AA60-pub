@@ -1,0 +1,29 @@
+//
+//
+//
+#include <decorator/instance/instance.us>
+#include "mmd_common.us"
+
+vert:
+
+out vec3 f_normal_screen;
+void main()
+{
+	instance_animation_set();
+	instance_emit();
+
+	vec3 normal_screen = instance_normal_screen();
+	gl_Position.xy += 
+		normal_screen.xy / ub_mmd_material.screen_size * ub_mmd_material.edge_width * gl_Position.w;
+}
+
+frag:
+
+layout (location = 0) out vec4 final_color0;
+uniform vec4 u_edge_color;
+
+void main()
+{
+	final_color0 = ub_mmd_material.edge_color;
+}
+

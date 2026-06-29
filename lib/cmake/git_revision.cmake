@@ -1,0 +1,21 @@
+if(DEFINED AA60_GIT_REVISION_INCLUDED)
+  return()
+endif()
+set(AA60_GIT_REVISION_INCLUDED ON)
+
+execute_process(
+  COMMAND git rev-parse --short HEAD
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/..
+  OUTPUT_VARIABLE AA60_GIT_REVISION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+)
+
+if(NOT AA60_GIT_REVISION)
+  set(AA60_GIT_REVISION unknown)
+endif()
+
+add_library(aa60_git_revision INTERFACE)
+target_compile_definitions(aa60_git_revision INTERFACE
+  GIT_REVISION="${AA60_GIT_REVISION}"
+)

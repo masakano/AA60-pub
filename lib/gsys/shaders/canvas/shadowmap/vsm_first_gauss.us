@@ -1,0 +1,36 @@
+//
+//
+//
+#include <canvas/vert.us>
+
+#define def_gauss_t vec2
+#include <canvas/gauss/gauss_kernel.us>
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+
+in  vec2 f_texcoord;
+layout (location = 0) out vec2 final_color0;
+
+uniform vec2 u_footstep;
+uniform float u_variance;
+
+vec2 gauss_neighbour(float t)
+{
+	vec2 delta = t * u_footstep / u_texture_size;
+	vec2 texcoord = clamp(f_texcoord + delta, vec2(0), vec2(1));
+	float depth = gauss_load_color0(texcoord).x;
+	// debug
+	//depth += 0.001;
+	return vec2(depth, depth*depth);
+}
+
+void main()
+{
+	final_color0 = gauss_kernel(u_variance);
+}
+
+
+

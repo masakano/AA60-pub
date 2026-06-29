@@ -1,0 +1,47 @@
+//
+//
+//
+#include <canvas/vert.us>
+#include <default/ub_connect.us>
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+uniform sampler2D u_color0;  // source
+uniform sampler2D u_color1;  // LOD captured
+
+in  vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+vec3 trimmed_mean4(vec3 c0, vec3 c1, vec3 c2, vec3 c3)
+{
+	vec3 sumv = c0 + c1 + c2 + c3;
+	vec3 minv = min(min(c0, c1), min(c2, c3));
+	vec3 maxv = max(max(c0, c1), max(c2, c3));
+	return (sumv - minv - maxv) * 0.5;
+}
+
+void main ()
+{
+	if (ub_connect.sources[1].level == 0) {
+		final_color0 = texture(u_color0, f_texcoord, 0); // linear interpolate
+		if (any(isnan(final_color0))) { 
+			final_color0 = vec4(0,0,0,1); // fix nan propagation
+		}
+	}
+	else {
+		const ivec2 fragcoord = 
+			ivec2(f_texcoord * vec2(textureSize(u_color1, ub_connect.sources[1].level-1)) - 0.5);
+
+		vec3 c0 = texelFetch(u_color1, fragcoord + ivec2(0,0), ub_connect.sources[1].level-1).rgb;
+		vec3 c1 = texelFetch(u_color1, fragcoord + ivec2(0,1), ub_connect.sources[1].level-1).rgb;
+		vec3 c2 = texelFetch(u_color1, fragcoord + ivec2(1,0), ub_connect.sources[1].level-1).rgb;
+		vec3 c3 = texelFetch(u_color1, fragcoord + ivec2(1,1), ub_connect.sources[1].level-1).rgb;
+
+		final_color0 = vec4(trimmed_mean4(c0, c1, c2, c3), 1);
+	}
+}
+
+
+

@@ -1,0 +1,29 @@
+//
+//
+//
+#include "vert.us"
+#include "calc_height.us"
+
+#include <decorator/material/material.us>
+#include <decorator/shadowmap/shadowmap.us>
+
+vert:
+
+uniform mat4 u_worldmap;
+
+void main()
+{
+	pbr_main();
+	shadowmap();
+
+	vec4 position_world = instance_position_world();
+	vec3 normal_world = instance_normal_world();
+
+#ifdef def_use_worldmap
+	vertblock_out.texcoord = u_worldmap * position_world;
+#endif
+
+	float height = calc_height();
+	position_world.xyz += normal_world * height * ub_material.height_scale; // must be world space
+	gl_Position = instance_worldscreen() * position_world;
+}

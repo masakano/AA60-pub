@@ -1,0 +1,46 @@
+//
+//
+//
+#include <canvas/vert.us>
+
+vert:
+void main()
+{
+	canvas_main();
+}
+frag:
+
+uniform sampler2D   u_color0; 
+uniform sampler2D   u_color3; // ssao;
+uniform float u_ssao_lerp;
+uniform float u_ssao_power;
+uniform bool u_ssao_only;
+
+in vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+void main ()
+{
+	vec4 color0 = texture(u_color0, f_texcoord);
+
+	float ssao = texture(u_color3, f_texcoord).r;
+	if (color0.a < 1.0) ssao = 1.0;
+
+	ssao = mix(1.0, pow(ssao, u_ssao_power), u_ssao_lerp);
+	
+	if (u_ssao_only) {
+		final_color0.rgb = vec3(ssao);
+	}
+	else {
+		vec4 color0 = texture(u_color0, f_texcoord);
+		final_color0.rgb = ssao * color0.rgb;
+		final_color0.a = color0.a;
+	}
+}
+
+
+
+
+
+
+

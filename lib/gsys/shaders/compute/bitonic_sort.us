@@ -1,0 +1,52 @@
+//
+//
+//
+comp:
+
+layout (local_size_x = def_local_size_x, local_size_y = 1, local_size_z = 1) in;
+
+buffer a_buffer { vec4 v[]; } b_buffer;
+
+uniform vec3 u_rayorg;
+uniform vec3 u_raydir;
+uniform uint u_j;
+uniform uint u_k;
+
+int compar(const vec4 c0, const vec4 c1)
+{
+	const float c_huge = 3.4028235e38;
+#if 0
+	float d0 = -dot(c0.xyz - u_rayorg, u_raydir);
+	float d1 = -dot(c1.xyz - u_rayorg, u_raydir);
+#else
+	float d0 = c0.w < 0? c_huge: -dot(c0.xyz - u_rayorg, u_raydir);
+	float d1 = c1.w < 0? c_huge: -dot(c1.xyz - u_rayorg, u_raydir);
+#endif
+	return d0 > d1? 1: d0 < d1? -1: 0;
+}
+
+void main()
+{
+        uint i = gl_GlobalInvocationID.x;
+	uint h = i ^ u_j;
+
+	if (h > i) {
+		vec4 c_i = b_buffer.v[i];
+		vec4 c_h = b_buffer.v[h];
+
+		int det = compar(c_i, c_h);
+
+		if ((i & u_k) == 0 && det > 0) {
+			b_buffer.v[i] = c_h;
+			b_buffer.v[h] = c_i;
+		}
+		if ((i & u_k) != 0 && det < 0) {
+			b_buffer.v[i] = c_h;
+			b_buffer.v[h] = c_i;
+		}
+	}
+}
+
+
+
+

@@ -1,0 +1,17 @@
+//
+//
+//
+#define def_use_shadowmap
+#include <decorator/shadowmap/shadowmap.us>
+#include <decorator/instance/instance.us>
+
+#include "mmd_common.us"
+
+vert:
+void main()
+{
+	instance_animation_set();
+	instance_emit();
+	shadowmap();
+}
+

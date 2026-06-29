@@ -1,0 +1,17 @@
+//
+//
+//
+#pragma once
+#include <default/ub_begin.h>
+
+UNIF_NAMESPACE(spu::gs_painter::plane)
+UNIF_BEGIN(UB_PLANE_COMPOSITION) {
+
+	mat4 worldview;
+	mat4 viewscreen;
+	mat4 screenview;
+	mat4 viewmap;
+	vec4 plane_view;
+	
+} UNIF_END(ub_plane_composition);
+#include <default/ub_end.h>

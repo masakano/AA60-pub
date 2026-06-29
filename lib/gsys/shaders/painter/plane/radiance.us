@@ -1,0 +1,26 @@
+//
+//
+//
+#include def_plane_frag_path
+
+vert:
+
+in vec2 a_position;
+out vec2 f_position_screen;
+
+void main()
+{
+	gl_Position = vec4(a_position, 0, 1);
+	f_position_screen = a_position;
+}
+
+frag:
+layout (location = 0) out vec4 final_color0;
+in vec2 f_position_screen;
+
+void main()
+{
+	vec3 raydir_view = plane_raydir_view(f_position_screen);
+	final_color0 = plane_radiance(raydir_view);
+}
+

@@ -1,0 +1,58 @@
+//
+//
+//
+vert:
+
+out VS_OUT
+{
+    vec3    ray_origin;
+    vec3    ray_direction;
+} vs_out;
+
+uniform vec3 u_ray_origin;
+uniform mat4 u_ray_lookat;
+uniform float u_aspect;
+
+uniform vec3 u_direction_scale;
+uniform vec3 u_direction_bias;
+
+void main()
+{
+    vec4 vertices[4] = vec4[4](vec4(-1.0, -1.0, 1.0, 1.0),
+                               vec4( 1.0, -1.0, 1.0, 1.0),
+                               vec4(-1.0,  1.0, 1.0, 1.0),
+                               vec4( 1.0,  1.0, 1.0, 1.0));
+    vec4 pos = vertices[gl_VertexID];
+
+    gl_Position = pos;
+    vs_out.ray_origin = u_ray_origin * vec3(1.0, 1.0, -1.0);
+    // vs_out.ray_origin = vec3(0.0);
+    vs_out.ray_direction = (u_ray_lookat * vec4(pos.xyz * u_direction_scale * vec3(1.0, u_aspect, 2.0) + u_direction_bias, 0.0)).xyz;
+    // vs_out.ray_direction = pos.xyz * vec3(1.0, aspect, 4.0);
+}
+
+//#version 420 core
+frag:
+
+in VS_OUT
+{
+    vec3    ray_origin;
+    vec3    ray_direction;
+} fs_in;
+
+layout (location = 0) out vec3 color;
+layout (location = 1) out vec3 origin;
+layout (location = 2) out vec3 reflected;
+layout (location = 3) out vec3 refracted;
+layout (location = 4) out vec3 reflected_color;
+layout (location = 5) out vec3 refracted_color;
+
+void main()
+{
+    color = vec3(0.0);
+    origin = fs_in.ray_origin;
+    reflected = fs_in.ray_direction;
+    refracted = vec3(0.0);
+    reflected_color = vec3(1.0);
+    refracted_color = vec3(0.0);
+}

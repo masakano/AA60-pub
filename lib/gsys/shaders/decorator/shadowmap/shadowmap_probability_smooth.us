@@ -1,0 +1,29 @@
+//
+//
+//
+#pragma once
+#define def_use_projected_radius
+#include <default/math.us>
+
+frag:
+uniform sampler2DArray u_shadowmap;
+
+float shadowmap_probability(const int layer, vec4 receiver_shadowtexc)
+{
+	float radius = projected_radius(
+		ub_shadowmap.view_to_shadowtexc[layer], receiver_shadowtexc.w, ub_shadowmap.light_radius);
+
+	radius = max(0.002, radius); // minimum softness
+	receiver_shadowtexc /= receiver_shadowtexc.w;
+	float receiver_depth = receiver_shadowtexc.z;
+	int samples = ub_shadowmap_pattern.receiver_count;
+	float p = 0.0;
+
+	for (int i = 0; i < samples; i++) {
+		vec2 delta = ub_shadowmap_pattern.receivers[i] * radius;
+		float blocker_depth = texture(u_shadowmap, vec3(receiver_shadowtexc.xy + delta, layer)).r;
+		p += (blocker_depth < 1.0 && blocker_depth < receiver_depth)? 0.0: 1.0;
+	}
+	return p / float(samples);
+}
+common:

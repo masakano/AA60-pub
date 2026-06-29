@@ -1,0 +1,15 @@
+//
+//
+//
+#include "copy_common.us"
+frag:
+uniform sampler2DRect u_color0_rect;
+vec4 copy_rect(const vec2 texcoord)
+{
+	return texture(u_color0_rect, gl_FragCoord.xy); // need check
+}
+common:
+
+
+
+

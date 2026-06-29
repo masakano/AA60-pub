@@ -1,0 +1,42 @@
+//
+//
+//
+#include "copy_common.us"
+#include "copy_2d.us"
+#include "copy_3d.us"
+#include "copy_cube.us"
+#include "copy_rect.us"
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+
+#ifndef def_use_expsoure0
+#define def_use_expsoure0 0
+#endif
+
+uniform uint u_target;
+in  vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+void main ()
+{
+	switch (u_target) {
+	case GL_TEXTURE_2D:             final_color0 = copy_2d(f_texcoord);         break;
+	case GL_TEXTURE_2D_ARRAY:       final_color0 = copy_2d_array(f_texcoord);   break;
+	case GL_TEXTURE_CUBE_MAP:       final_color0 = copy_cube(f_texcoord);       break;
+	case GL_TEXTURE_CUBE_MAP_ARRAY: final_color0 = copy_cube_array(f_texcoord); break;
+	case GL_TEXTURE_3D:             final_color0 = copy_3d(f_texcoord);         break;
+	case GL_TEXTURE_RECTANGLE:      final_color0 = copy_rect(f_texcoord);       break;
+	}
+#if def_use_bias_gain == 1
+	final_color0 = max(vec4(0), final_color0 + ub_connect.sources[0].bias) * ub_connect.sources[0].gain;
+#endif
+}
+
+
+
+
+
+

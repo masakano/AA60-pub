@@ -1,0 +1,58 @@
+//
+//
+//
+#include <canvas/vert.us>
+#include "tonemap.us"
+#include "tonemap_load_color.us"
+
+#ifndef def_blend_max
+#define def_blend_max 0
+#endif
+
+vert:
+void main()
+{
+	canvas_main();
+}
+
+frag:
+
+in vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+uniform sampler2D u_color1;	// blur0
+uniform sampler2D u_color2;	// blur1
+uniform sampler2D u_color3;	// blur2
+
+uniform bool u_tonemap_is_vignette;
+
+float vignette(vec2 pos, float inner, float outer)
+{
+	float r = length(pos);  
+	return 1.0 - smoothstep(inner, outer, r);  
+}
+
+void main()
+{
+	vec3 c = tonemap_load_color0(f_texcoord).rgb * ub_connect.sources[0].gain;  // load scene
+	
+	if (def_blend_max > 0) {
+		c += max(vec3(0), textureLod(u_color1, f_texcoord, 0).rgb) * ub_connect.sources[1].gain;
+	}
+	if (def_blend_max > 1) {
+		c += max(vec3(0), textureLod(u_color2, f_texcoord, 0).rgb) * ub_connect.sources[2].gain;
+	}
+	if (def_blend_max > 2) {
+		c += max(vec3(0), textureLod(u_color3, f_texcoord, 0).rgb) * ub_connect.sources[3].gain;
+	}
+
+	if (u_tonemap_is_vignette) {
+		c *= vignette(f_texcoord*2.0-1.0, 0.55, 1.5);
+	}
+	final_color0.rgb = tonemap(c);
+	final_color0.a = 1.0;
+	
+
+}
+
+

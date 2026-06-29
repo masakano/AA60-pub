@@ -1,0 +1,43 @@
+//
+//
+//
+#include <canvas/vert.us>
+#define N 3
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+uniform sampler2D u_depth;
+uniform sampler2D u_color0;
+in  vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+float fir(sampler2D sampler, const vec2 texcoord, const float sx = 1, const float sy = 1)
+{
+	const float c_coef[N][N] = {
+		{-1, -1, -1},
+		{-1, +8, -1},
+		{-1, -1, -1},
+	};
+	float ret = 0.0;
+	for (int j = 0; j < N; j++) {
+		for (int i = 0; i < N; i++) {
+			ret += textureOffset(sampler, texcoord, ivec2((i-N/2)*sx, (i-N/2)*sy)).x * c_coef[j][i];
+		}
+	}
+	return ret;
+}
+
+void main()
+{
+	float fir_result = fir(u_depth, f_texcoord.xy);
+	float fir_color = fir_result > 0.0001? 0.0: 1.0;
+	final_color0.rgb = vec3(fir_color);
+	final_color0.a = 1;
+
+}
+
+
+
+

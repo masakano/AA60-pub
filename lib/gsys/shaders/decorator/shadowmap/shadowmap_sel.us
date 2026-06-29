@@ -1,0 +1,39 @@
+//
+//
+//
+#pragma once
+#include <default/debug.us>
+
+vert:
+void shadowmap() {}
+
+frag:
+float shadowmap(const vec3 position_view)
+{
+	if (ub_shadowmap.enable) {
+		for (int layer = 0; layer < ub_shadowmap.layer_count; layer++) {
+			vec4 receiver_shadowtexc =
+				ub_shadowmap.view_to_shadowtexc[layer] * vec4(position_view, 1);
+			
+			if (shadowmap_is_valid(receiver_shadowtexc)) {
+				float prob = shadowmap_probability(layer, receiver_shadowtexc);
+
+#if def_shadowmap_debug == 1
+				const vec3 colors[6] = {
+					vec3(1.0,0.5,0.5),
+					vec3(0.5,1.0,0.5),
+					vec3(0.5,0.5,1.0),
+					vec3(0.5,1.0,1.0),
+					vec3(1.0,0.5,1.0),
+					vec3(1.0,1.0,0.5),
+				};
+				g_debug_color = vec4(prob * colors[layer % 6], 0.5);
+
+#endif				
+				return prob;
+			}
+		}
+	}
+	return 1.0;
+}
+common:

@@ -1,0 +1,86 @@
+//
+//
+//
+vert:
+in vec4 a_position;
+in vec3 a_normal;
+
+out VS_OUT
+{
+    vec4 color;
+    vec3 normal;
+} vs_out;
+
+void main()
+{
+    gl_Position = a_position;
+    vs_out.normal = a_normal;
+}
+
+geom:
+//#version 430 core
+
+layout (invocations = 16, triangles) in;
+layout (triangle_strip, max_vertices = 3) out;
+
+in VS_OUT
+{
+    vec4 color;
+    vec3 normal;
+} gs_in[];
+
+out GS_OUT
+{
+    vec4 color;
+    vec3 normal;
+} gs_out;
+
+layout (binding = 0) uniform BLOCK
+{
+    mat4 u_viewscreen;
+    mat4 u_modelview[16];
+};
+
+void main()
+{
+    int i;
+
+    const vec4 colors[16] = vec4[16](
+        vec4(0.0, 0.0, 1.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0),
+        vec4(0.0, 1.0, 1.0, 1.0), vec4(1.0, 0.0, 1.0, 1.0),
+        vec4(1.0, 1.0, 0.0, 1.0), vec4(1.0, 1.0, 1.0, 1.0),
+        vec4(0.0, 0.0, 0.5, 1.0), vec4(0.0, 0.5, 0.0, 1.0),
+        vec4(0.0, 0.5, 0.5, 1.0), vec4(0.5, 0.0, 0.0, 1.0),
+        vec4(0.5, 0.0, 0.5, 1.0), vec4(0.5, 0.5, 0.0, 1.0),
+        vec4(0.5, 0.5, 0.5, 1.0), vec4(1.0, 0.5, 0.5, 1.0),
+        vec4(0.5, 1.0, 0.5, 1.0), vec4(0.5, 0.5, 1.0, 1.0)
+    );
+
+    for (i = 0; i < gl_in.length(); i++)
+    {
+        gs_out.color = colors[gl_InvocationID];
+        gs_out.normal = mat3(u_modelview[gl_InvocationID]) * gs_in[i].normal;
+        gl_Position = u_viewscreen * u_modelview[gl_InvocationID] * gl_in[i].gl_Position;
+        gl_Layer = gl_InvocationID;
+        EmitVertex();
+    }
+
+    EndPrimitive();
+}
+
+frag:
+//#version 420 core
+
+in GS_OUT
+{
+    vec4 color;
+    vec3 normal;
+} fs_in;
+
+layout (location = 0) out vec4 color;
+
+void main()
+{
+	//color = vec4(1.0); // fs_in.color;
+	color = vec4(abs(fs_in.normal.z)) * fs_in.color;
+}

@@ -1,0 +1,25 @@
+//
+//
+//
+#include "copy_common.us"
+
+frag:
+
+uniform sampler2D u_color0;
+uniform sampler2DArray u_color0_2d_array;
+
+vec4 copy_2d(const vec2 texcoord)
+{
+	return textureLod(u_color0, texcoord, float(ub_connect.sources[0].level));
+}
+
+vec4 copy_2d_array(const vec2 texcoord)
+{
+	return textureLod(u_color0_2d_array, 
+			  vec3(texcoord, ub_connect.sources[0].layer), float(ub_connect.sources[0].level));
+}
+common:
+
+
+
+

@@ -1,0 +1,55 @@
+//
+//
+//
+vert:
+
+void main()
+{
+    const vec4 vertex[] = vec4[] (
+	    vec4(-1.0, -1.0, 0.5, 1.0),
+	    vec4( 1.0, -1.0, 0.5, 1.0),
+	    vec4(-1.0,  1.0, 0.5, 1.0),
+	    vec4( 1.0,  1.0, 0.5, 1.0) );
+
+    gl_Position = vertex[gl_VertexID];
+
+}
+
+frag:
+
+uniform sampler2D input_image;
+layout (location = 0) out vec4 color;
+
+void main()
+{
+    float m = 1.0 + gl_FragCoord.x / 30.0;
+    vec2 s = 1.0 / textureSize(input_image, 0);
+    vec2 o = vec2(-256, 0); // ad-hoc
+	    
+    vec2 C = gl_FragCoord.xy;
+
+    vec2 P0 = vec2(C * 2.0) + vec2(-m, -m);
+    vec2 P1 = vec2(C * 2.0) + vec2(-m, +m);
+    vec2 P2 = vec2(C * 2.0) + vec2(+m, -m);
+    vec2 P3 = vec2(C * 2.0) + vec2(+m, +m);
+
+    P0 = (P0 + o) * s;
+    P1 = (P1 + o) * s;
+    P2 = (P2 + o) * s;
+    P3 = (P3 + o) * s;
+
+    if (P0.x < 0 || P0.x > 1.0) discard;
+    if (P0.y < 0 || P0.y > 1.0) discard;
+
+    float a = textureLod(input_image, P0, 0).r;
+    float b = textureLod(input_image, P1, 0).r;
+    float c = textureLod(input_image, P2, 0).r;
+    float d = textureLod(input_image, P3, 0).r;
+
+    float f = a - b - c + d;
+
+    m *= 2;
+
+    color = vec4(f) / float(m * m);
+
+}

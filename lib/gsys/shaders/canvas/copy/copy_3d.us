@@ -1,0 +1,17 @@
+//
+//
+//
+#include "copy_common.us"
+
+frag:
+uniform sampler3D u_color0_3d;
+vec4 copy_3d(const vec2 texcoord)
+{
+	float z = float(ub_connect.sources[0].layer) / float(textureSize(u_color0_3d, 0).z);
+	return textureLod(u_color0_3d, vec3(texcoord, z), float(ub_connect.sources[0].level));
+}
+common:
+
+
+
+

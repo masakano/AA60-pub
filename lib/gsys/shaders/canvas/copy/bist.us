@@ -1,0 +1,79 @@
+//
+//
+//
+#include <canvas/vert.us>
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+buffer a_atomic { uint ui; } b_atomic;
+
+uniform sampler2D u_color0; // real
+uniform sampler2D u_color1; // ghost
+
+in  vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+const vec2 c_poisson32[32] = {
+        vec2(-0.975402, -0.0711386),
+        vec2(-0.920347, -0.41142  ),
+        vec2(-0.883908, 0.217872  ),
+        vec2(-0.884518, 0.568041  ),
+        vec2(-0.811945, 0.90521   ),
+        vec2(-0.792474, -0.779962 ),
+        vec2(-0.614856, 0.386578  ),
+        vec2(-0.580859, -0.208777 ),
+        vec2(-0.53795,  0.716666  ),
+        vec2(-0.515427, 0.0899991 ),
+        vec2(-0.454634, -0.707938 ),
+        vec2(-0.420942, 0.991272  ),
+        vec2(-0.261147, 0.588488  ),
+        vec2(-0.211219, 0.114841  ),
+        vec2(-0.146336, -0.259194 ),
+        vec2(-0.139439, -0.888668 ),
+        vec2(0.0116886, 0.326395  ),
+        vec2(0.0380566, 0.625477  ),
+        vec2(0.0625935, -0.50853  ),
+        vec2(0.125584,  0.0469069 ),
+        vec2(0.169469,  -0.997253 ),
+        vec2(0.320597,  0.291055  ),
+        vec2(0.359172,  -0.633717 ),
+        vec2(0.435713,  -0.250832 ),
+        vec2(0.507797,  -0.916562 ),
+        vec2(0.545763,  0.730216  ),
+        vec2(0.56859,   0.11655   ),
+        vec2(0.743156,  -0.505173 ),
+        vec2(0.736442,  -0.189734 ),
+        vec2(0.843562,  0.357036  ),
+        vec2(0.865413,  0.763726  ),
+        vec2(0.872005,  -0.927    ),
+};
+
+void main ()
+{
+	ivec2 itexcoord = ivec2(f_texcoord * textureSize(u_color0, 0));
+	vec4 color0 = texelFetch(u_color0, itexcoord, 0);
+	vec4 color1 = texelFetch(u_color1, itexcoord, 0);
+
+	vec3 d = vec3(8192); // ad-hoc
+	const float c_window = 4.0;
+	for (int i = 0; i < 32; i++) {
+		ivec2 dt = ivec2(c_poisson32[i] * c_window);
+		vec4 color2 = texelFetch(u_color1, itexcoord + dt, 0);
+		d = min(d, abs(color0.rgb - color2.rgb));
+	}
+	const float c_th = 0.01 /*0.05*/;
+
+	if (dot(d,d) > c_th) {
+		atomicAdd(b_atomic.ui, 1);
+		final_color0 = vec4(1,0,0,1);
+	}
+	else {
+		final_color0 = color0;
+	}
+}
+
+
+
+

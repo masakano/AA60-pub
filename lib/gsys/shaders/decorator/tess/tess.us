@@ -1,0 +1,14 @@
+//
+//
+//
+#pragma once
+#ifndef def_tess_patch_vertices
+#define def_tess_patch_vertices 3
+#endif
+
+#if def_tess_patch_vertices == 3
+#include "tess3.us"
+#else
+#include "tess4.us"
+#endif
+

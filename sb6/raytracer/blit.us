@@ -1,0 +1,22 @@
+//
+//
+//
+vert:
+void main()
+{
+    vec4 vertices[4] = vec4[4](
+	    vec4(-1.0, -1.0, 0.5, 1.0),
+	    vec4( 1.0, -1.0, 0.5, 1.0),
+	    vec4(-1.0,  1.0, 0.5, 1.0),
+	    vec4( 1.0,  1.0, 0.5, 1.0));
+
+    gl_Position = vertices[gl_VertexID];
+}
+
+frag:
+layout (binding = 0) uniform sampler2D u_composite_texture;
+layout (location = 0) out vec4 color;
+void main()
+{
+	color = texelFetch(u_composite_texture, ivec2(gl_FragCoord.xy), 0);
+}

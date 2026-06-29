@@ -1,0 +1,22 @@
+//
+//
+//
+#include "cloudy_irradiance_common.us"
+#include "ub_cloudy_irradiance.us"
+#define ub ub_cloudy_irradiance
+
+frag:
+
+in vec2 f_texcoord;
+layout(location = 0) out vec4 final_color0;
+
+void main()
+{
+	vec3 raydir = uv_to_raydir(f_texcoord);
+	vec3 colorR;
+	vec3 colorM;
+	skydome_render_sky(raydir, ub.sky_cutoff_angle, colorR, colorM);
+	final_color0.rgb = colorR * 0.5 + colorM; // need parameterize
+	final_color0.a = 1;
+	
+}

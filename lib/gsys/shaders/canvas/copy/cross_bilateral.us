@@ -1,0 +1,54 @@
+//
+//
+//
+#include <canvas/vert.us>
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+
+uniform sampler2D u_depth;
+uniform sampler2D u_color0;
+in  vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+vec3 depth_cross_birateral()
+{
+	float depth0 = texture(u_depth, f_texcoord).x;
+	if (depth0 > 0.999) {
+		return texture(u_color0, f_texcoord).rgb;
+	}
+
+	vec4 sum = vec4(0);
+	float min_depth = 1.0;
+	float max_depth = 0.0;
+
+	for (int j = -16; j <= 16; j += 1) {
+		for (int i = -16; i <= 16; i += 1) {
+			float depth = textureOffset(u_depth, f_texcoord, ivec2(i, j)).r;
+			min_depth = min(depth, min_depth);
+			max_depth = max(depth, max_depth);
+		}
+	}
+
+	for (int j = -16; j <= 16; j += 1) {
+		for (int i = -16; i <= 16; i += 1) {
+			vec3 color = textureOffset(u_color0, f_texcoord, ivec2(i, j)).rgb;
+			float depth = textureOffset(u_depth, f_texcoord, ivec2(i, j)).r;
+			float weight = (depth - min_depth) / (max_depth - min_depth);
+			sum += vec4(color, 1) * weight;
+		}
+	}
+	return vec3(sum.rgb / sum.w);
+}
+
+void main()
+{
+	final_color0.rgb = depth_cross_birateral();
+	final_color0.a = 1;
+}
+
+
+
+

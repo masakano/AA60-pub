@@ -1,0 +1,29 @@
+//
+//
+//
+vert:
+out vec2 uv;
+
+void main()
+{
+    vec2 pos[] = vec2[](vec2(-1.0, -1.0),
+                        vec2( 1.0, -1.0),
+                        vec2(-1.0,  1.0),
+                        vec2( 1.0,  1.0));
+
+    gl_Position = vec4(pos[gl_VertexID], 0.0, 1.0);
+    uv = pos[gl_VertexID];
+}
+
+
+frag:
+
+layout (binding = 0) uniform sampler2D tex;
+layout (location = 0) out vec4 color;
+
+in vec2 uv;
+
+void main()
+{
+    color = texture(tex, uv);
+}

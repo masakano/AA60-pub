@@ -1,0 +1,55 @@
+//
+//
+//
+#define def_use_projected_radius
+#define def_use_shadowmap
+#define def_use_pbr_ibl_irradmap
+#define def_use_pbr_ibl_lightmap
+#define def_use_pbr_setup
+#define def_use_rgb_hsv
+
+#include "terrain_geom.us"
+#include <decorator/material/pbr_material.us>
+#include <decorator/shadowmap/shadowmap.us>
+
+vert:
+void main() { tess_main(); }
+
+tesc:
+void main() { tess_main(); }
+
+tese:
+void main() { tess_main(); }
+
+geom:
+void main() { geom_main(); }
+
+frag:
+
+layout (location = 0) out vec4 final_color0;
+
+vec3 get_normal(const vec3 position)
+{
+	vec3 ddx = dFdx(position);
+	vec3 ddy = dFdy(position);
+	return normalize(cross(ddx, ddy));
+}
+
+uniform int u_use_fbm = 0;
+
+void main()
+{
+	vec3 normal_view = vertblock_in.normal_view;
+	if (u_use_fbm != 0) {
+		normal_view = get_normal(vertblock_in.position_view.xyz);
+	}
+
+	pbr_packet_t p;
+	pbr_setup(p, vertblock_in.position_view.xyz, vertblock_in.normal_view, vertblock_in.texcoord.xy);
+
+	if (p.albedo.a < ub_material.min_alpha) discard;
+	p.light_radiance *= shadowmap(p.position_view);
+	final_color0 = pbr_exec(p);
+}
+
+

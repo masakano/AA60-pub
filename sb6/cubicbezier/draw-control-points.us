@@ -1,0 +1,20 @@
+//
+//
+//
+vert:
+
+in vec4 a_position;
+uniform mat4 u_modelscreen;
+void main()
+{
+    gl_Position = u_modelscreen * a_position;
+}
+
+frag:
+out vec4 color;
+uniform vec4 u_draw_color = vec4(0.5, 0.8, 1.0, 1.0);
+void main()
+{
+    color = u_draw_color;
+}
+

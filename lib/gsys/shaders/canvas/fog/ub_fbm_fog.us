@@ -1,0 +1,23 @@
+//
+//
+//
+#pragma once
+
+#include <default/ub_begin.h>
+
+UNIF_NAMESPACE(spu::gs_canvas::fog)
+UNIF_BEGIN(UB_FBM_FOG)
+{
+	vec4 speed;
+	float amplitude;
+	float granularity;
+	float lacunarity;
+	float octave_decay;
+	float density_min;
+	float density_max;
+	int octaves;
+
+} UNIF_END(ub_fbm_fog);
+
+#include <default/ub_end.h>
+

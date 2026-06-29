@@ -1,0 +1,61 @@
+//
+//
+//
+#include <canvas/vert.us>
+
+#define def_gauss_t vec4
+#include <canvas/gauss/gauss_kernel.us>
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+
+in  vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+uniform mat4 u_texcview;
+uniform vec2 u_footstep;
+
+uniform float u_aperture_radius = 0.0;
+uniform float u_focal_distance = 3.0;
+
+uniform bool u_show_focal_point;
+
+vec4 gauss_neighbour(float t)
+{
+	const vec2  delta = t * u_footstep / u_texture_size;
+	const vec2 texcoord = clamp(f_texcoord + delta, vec2(0), vec2(1));
+	return gauss_load_color0(texcoord);
+}
+
+float get_distance(vec2 texcoord)
+{
+	const float depth = gauss_load_depth0(texcoord);
+	const vec4 position_texcoord = vec4(texcoord, depth, 1);
+	
+	vec4 position_view = u_texcview * position_texcoord;
+	position_view.xyz /= position_view.w;
+	
+	return length(position_view.xyz);
+}
+
+float get_variance(float distance)
+{
+	return abs(distance - u_focal_distance) / u_focal_distance * u_aperture_radius;
+}
+
+void main()
+{
+	float camera_distance = get_distance(f_texcoord);
+	float variance = clamp(get_variance(camera_distance), 0.0, 32.0); 
+
+	final_color0 = gauss_kernel(variance);
+	
+	if (u_show_focal_point) {
+		const float r = exp(-abs(camera_distance -  u_focal_distance) / u_focal_distance * 64);
+		final_color0.rgb = mix(final_color0.rgb, vec3(0,1,0), r);
+	}
+
+}
+

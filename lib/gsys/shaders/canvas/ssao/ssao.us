@@ -1,0 +1,91 @@
+//
+//
+//
+#include <default/math.us>
+
+vert:
+
+out vec2 f_texcoord;
+
+void main()
+{
+	const vec2 positions[4] = {
+		vec2(-1, -1), vec2(+1, -1),
+		vec2(-1, +1), vec2(+1, +1),
+	};
+	vec2 position  = positions[gl_VertexID];
+	gl_Position = vec4(position, 0, 1);
+	f_texcoord = position.xy * 0.5 + vec2(0.5, 0.5);
+}
+
+frag:
+
+layout(std140) uniform UB_SAMPLES
+{
+	vec3 p[256];
+} ub_samples;
+
+uniform uint u_sample_count;
+uniform float u_sample_radius;
+uniform sampler2D u_depth;
+
+uniform mat4 u_texcview;
+uniform mat4 u_viewtexc;
+
+in vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+float frand(vec2 co)
+{
+	return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float texture_depth(const vec2 texcoord)
+{
+	return texture(u_depth, texcoord).r;
+}
+
+vec3 get_tangent_candidate(const vec3 p)
+{
+	if (p.x < p.y && p.x < p.z) return vec3(1,0,0);
+	if (p.y < p.z && p.y < p.x) return vec3(0,1,0);
+	return vec3(0,0,1);;
+}
+
+void main()
+{
+	float depth = texture_depth(f_texcoord.xy);
+	if(depth < 1.0)	{
+		vec4 position_view = u_texcview * vec4(f_texcoord.xy, depth, 1.0);
+		position_view.xyz /= position_view.w;
+
+		vec3 dx = dFdx(position_view.xyz);
+		vec3 dy = dFdy(position_view.xyz);
+		
+		vec3 N = normalize(cross(dx, dy));
+		vec3 T = get_tangent_candidate(N);
+		vec3 B = normalize(cross(N, T));
+		T = normalize(cross(B, N));
+
+		mat3 tangentview = mat3(T, B, N);
+		float occulusion = 0;
+		
+		for (int i = 0; i < u_sample_count; i++) {
+			vec3 probe_view = position_view.xyz + (tangentview * ub_samples.p[i]) * u_sample_radius;
+			vec4 probe_texc = u_viewtexc * vec4(probe_view, 1);
+			probe_texc.xyz /= probe_texc.w;
+
+			float target_depth = texture_depth(probe_texc.xy);
+			vec4 target_view = u_texcview * vec4(probe_texc.xy, target_depth, 1.0);
+			target_view.xyz /= target_view.w;
+			
+			if (target_view.z - u_sample_radius < probe_view.z && probe_view.z < target_view.z) {
+				occulusion++;
+			}
+		}
+		final_color0 = vec4(1.0 - occulusion / u_sample_count);
+	}
+	else {
+		final_color0 = vec4(1.0);
+	}
+}

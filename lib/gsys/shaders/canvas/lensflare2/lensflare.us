@@ -1,0 +1,64 @@
+//
+//
+//
+#include <canvas/vert.us>
+
+vert:
+void main()
+{
+	canvas_main();
+}
+
+frag:
+const int MAX_SAMPLES = 64;
+
+uniform sampler2D u_input_texture;
+uniform sampler2D u_lens_dirt_texture;
+uniform sampler2D u_lens_star_texture;
+uniform sampler1D u_lens_color_texture;
+uniform float u_flare_dispersal = 0.25;
+uniform float u_flare_halo_width = 1.0;
+uniform float u_flare_distortion = 1.0;
+uniform int u_flare_samples = 8;
+
+in vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+vec4 distorted_texture(in sampler2D tex, in vec2 texcoord, in vec2 direction, in vec3 distortion)
+{
+	return vec4(
+	        texture(tex, texcoord + direction * distortion.r).r,
+	        texture(tex, texcoord + direction * distortion.g).g,
+	        texture(tex, texcoord + direction * distortion.b).b, 1.0);
+}
+
+void main()
+{
+	vec2 texcoord = -f_texcoord + vec2(1.0);  // flip texcoordoords
+	vec2 texture_size = 1.0 / vec2(textureSize(u_input_texture, 0));
+
+	vec2 ghost_vec = (vec2(0.5) - texcoord) * u_flare_dispersal;
+	vec2 halo_vec = normalize(ghost_vec) * u_flare_halo_width;
+	vec3 distortion = vec3(-texture_size.x * u_flare_distortion, 0.0, texture_size.x * u_flare_distortion);
+
+	// sample ghosts:
+	vec4 result = vec4(0.0);
+	for (int i = 0; i < u_flare_samples; ++i) {
+		vec2 offset = fract(texcoord + ghost_vec * float(i));
+		float weight = length(vec2(0.5) - offset) / length(vec2(0.5));
+		weight = pow(1.0 - weight, 10.0);
+		
+		result += distorted_texture(u_input_texture, offset, normalize(ghost_vec), distortion) * weight;
+	}
+	result *= texture(u_lens_star_texture, f_texcoord); 
+	result *= texture(u_lens_color_texture, length(vec2(0.5) - texcoord) / length(vec2(0.5)));
+
+	// sample halo:
+	float weight = length(vec2(0.5) - fract(texcoord + halo_vec)) / length(vec2(0.5));
+	weight = pow(1.0 - weight, 10.0);
+
+	result += distorted_texture(u_input_texture, fract(texcoord + halo_vec), normalize(ghost_vec), distortion)
+	        * weight;
+	
+	final_color0 = result;
+}

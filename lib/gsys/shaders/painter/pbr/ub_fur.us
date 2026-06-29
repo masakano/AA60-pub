@@ -1,0 +1,15 @@
+//
+//
+//
+#pragma once
+#include <default/ub_begin.h>
+
+UNIF_NAMESPACE(spu::gs_painter::pbr)
+UNIF_BEGIN(UB_FUR) {
+	float height;
+	float position_jitter_scale;
+	float normal_jitter_scale;
+	float height_jitter_scale;
+} UNIF_END(ub_fur);
+
+#include <default/ub_end.h>

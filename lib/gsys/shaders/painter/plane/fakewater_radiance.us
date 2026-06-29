@@ -1,0 +1,48 @@
+//
+//
+//
+#pragma once
+#include "common.us"
+
+frag:
+
+uniform sampler2D u_water_heightmap;
+uniform mat4 u_water_maptexcoords[4];
+uniform float u_water_height_scale;
+
+vec4 fakewater_plane_radiance(const vec3 raydir_view)
+{
+	const vec4 plane_view = ub_plane_composition.plane_view;
+	
+	vec3 position_view = plane_cross_point(raydir_view, plane_view);
+	vec3 position_texcoord = plane_view_to_texcoord(position_view);
+	gl_FragDepth = position_texcoord.z;
+	
+	pbr_packet_t p;
+	vec2 position_map = (ub_plane_composition.viewmap * vec4(position_view, 1)).xy;
+	vec3 normal_view = normalize(plane_view.xyz);
+
+	vec3 wavy_normal_view;
+	{
+		float h = 0;
+		for (int i = 0; i < 4; i++) {
+			vec2 position_map0 = vec2(u_water_maptexcoords[i] * vec4(position_map, 0, 1));
+			h += texture(u_water_heightmap, position_map0).r * u_water_height_scale;
+		}
+		vec3 wavy_position_view = position_view + normal_view * h * 1.0 / 2.0; // ad-hoc
+		vec3 dx = dFdx(wavy_position_view);
+		vec3 dy = dFdy(wavy_position_view);
+		wavy_normal_view = normalize(cross(dx, dy));
+	}
+	
+	float c_depth = 0.01;
+	vec2 wavy_position_map =
+		(ub_plane_composition.viewmap * vec4(position_view + wavy_normal_view * c_depth, 1)).xy;
+
+	pbr_setup(p, position_view.xyz, wavy_normal_view, wavy_position_map);
+	
+	p.light_radiance *= shadowmap(position_view); // need parameterize
+	plane_set_reflect_color(position_view, normal_view, p.normal_view);
+	return pbr_exec(p);
+}
+common:

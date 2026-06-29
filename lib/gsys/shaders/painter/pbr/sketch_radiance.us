@@ -1,0 +1,53 @@
+//
+//
+//
+#include <decorator/material/material.us>
+#include <decorator/instance/instance.us>
+
+vert:
+out vec4 f_position;
+
+void main()
+{
+	instance_animation_set();
+	instance_emit();
+	f_position = gl_Position;
+}
+
+frag:
+
+uniform sampler2D u_rand_texture;
+in vec4 f_position;
+
+
+layout (location = 0) out vec4 final_color0;  // diffuse (for reference)
+
+const vec4  c_fg = vec4(1);
+const vec4  c_bg = vec4(0);
+const vec3  c_light_dir  = normalize(vec3(1,1,1));
+
+uniform float u_roughness;
+uniform float u_specular;
+uniform float u_brightness;
+
+void main ()
+{
+	vec4 decal_color0 = texture_albedomap(vertblock_in.texcoord.xy);
+	vec4 decal_color1 = texture_albedomap(vertblock_in.texcoord.xy, 4);
+	vec3 normal_view  = vertblock_in.normal_view;
+	
+
+	float diffuse  = clamp(dot(c_light_dir, normal_view), 0.0, 1.0);
+	float rand_value = texture(u_rand_texture, f_position.xy * u_roughness).x;
+	float edge = pow(abs(normal_view.z), u_specular);
+
+	float pen_density = clamp(u_brightness * edge * (diffuse + rand_value), 0.0, 1.0);
+	vec4 pen_color = mix(c_bg, c_fg, pen_density);
+	
+	float matid_f = float(ub_material.hash) / 256.0;
+
+	final_color0 = pen_color * decal_color1;
+	final_color0.a = decal_color0.a;
+}
+
+

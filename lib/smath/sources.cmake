@@ -1,0 +1,28 @@
+set(sources
+  src/color_chart.cpp
+  src/convex2f.cpp
+  src/convex3f.cpp
+  src/convex2f_hull.cpp
+  src/convex3f_hull.cpp
+  src/gjk.cpp
+  src/composition.cpp
+  src/substance.cpp
+  src/joint3f.cpp
+  src/mat4f.cpp
+  src/mat4f_frustum.cpp
+  src/perlin_noisef.cpp
+  src/object_picker.cpp
+  src/quatf.cpp
+  src/shadow_frustumf.cpp
+  src/triangulate.cpp
+  src/mesh.cpp 
+  src/remesh.cpp 
+  src/voxel_fluid.cpp 
+  src/voxel_fluid_fire.cpp 
+  src/voxel_fluid_smoke.cpp 
+  src/voxel_fluid_spectrum.cpp 
+  src/sph_fluid.cpp 
+  src/mmd_animation.cpp
+  src/mmd_clip.cpp
+)
+

@@ -1,0 +1,17 @@
+//
+//
+//
+#pragma once
+
+#include <default/ub_begin.h>
+
+UNIF_NAMESPACE(spu::gs_canvas::irradiance)
+UNIF_BEGIN(UB) {
+	uint lightmap_target;
+	float power;
+	float step;
+} UNIF_END(ub);
+
+#include <default/ub_end.h>
+
+

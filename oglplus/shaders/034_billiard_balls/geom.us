@@ -1,0 +1,117 @@
+//
+//
+//
+geom:
+layout(triangles) in;                                                                  
+layout(triangle_strip, max_vertices = 18) out;
+
+uniform mat4 u_viewscreen;
+uniform mat4 u_worldview;
+
+in vec4 g_position[3];
+in vec3 g_normal[3];
+in vec3 g_tangent[3];
+in vec3 g_bitangent[3];
+in vec3 g_lightdir[3];
+in vec3 g_viewdir[3];
+in vec2 g_texcoord[3];
+in vec2 g_stcoord[3];
+
+out vec3 f_normal;
+out vec3 f_tangent;
+out vec3 f_bitangent;
+out vec3 f_lightdir;
+out vec3 f_viewdir;
+out vec2 f_texcoord;
+out vec2 f_stcoord;
+
+#if def_color_map == 1
+
+const mat4 cube_faceMatrix[6] = mat4[6](                                                
+	mat4(                                                                           
+		0.0,  0.0, -1.0,  0.0,                                                 
+		0.0, -1.0,  0.0,  0.0,                                                 
+		-1.0,  0.0,  0.0,  0.0,                                                 
+		0.0,  0.0,  0.0,  1.0                                                  
+	),
+	mat4(                                                                        
+		0.0,  0.0,  1.0,  0.0,                                                 
+		0.0, -1.0,  0.0,  0.0,                                                 
+		1.0,  0.0,  0.0,  0.0,                                                 
+		0.0,  0.0,  0.0,  1.0                                                  
+	),
+	mat4(                                                                        
+		1.0,  0.0,  0.0,  0.0,                                                 
+		0.0,  0.0, -1.0,  0.0,                                                 
+		0.0,  1.0,  0.0,  0.0,                                                 
+		0.0,  0.0,  0.0,  1.0                                                  
+	),
+	mat4(                                                                        
+		1.0,  0.0,  0.0,  0.0,                                                 
+		0.0,  0.0,  1.0,  0.0,                                                 
+		0.0, -1.0,  0.0,  0.0,                                                 
+		0.0,  0.0,  0.0,  1.0                                                  
+	),
+	mat4(                                                                        
+		1.0,  0.0,  0.0,  0.0,                                                 
+		0.0, -1.0,  0.0,  0.0,                                                 
+		0.0,  0.0, -1.0,  0.0,                                                 
+		0.0,  0.0,  0.0,  1.0                                                  
+	),
+	mat4(                                                                        
+		-1.0,  0.0,  0.0,  0.0,                                                 
+		0.0, -1.0,  0.0,  0.0,                                                 
+		0.0,  0.0,  1.0,  0.0,                                                 
+		0.0,  0.0,  0.0,  1.0                                                  
+	)                                                                               
+);
+
+void main()                                                                        
+{                                                                                      
+	for(gl_Layer=0; gl_Layer!=6; ++gl_Layer) {                                                                               
+		mat4 transform_matrix =
+			u_viewscreen *
+			cube_faceMatrix[gl_Layer] *
+			u_worldview;
+		for(int i=0; i!=3; ++i) {
+			gl_Position =
+				transform_matrix *
+				//gl_in[i].gl_Position;
+				g_position[i];
+			f_normal = g_normal[i];
+			f_tangent = g_tangent[i];
+			f_bitangent = g_bitangent[i];
+			f_lightdir = g_lightdir[i];
+			f_viewdir = g_viewdir[i];
+			f_texcoord = g_texcoord[i];
+			f_stcoord = g_stcoord[i];
+			EmitVertex();
+		}                                                                       
+		EndPrimitive();                                                         
+	}                                                                               
+}                                                                                      
+
+#else
+
+void main()
+{                                                                                      
+	for(int i=0; i!=3; ++i) {
+		gl_Position =
+			u_viewscreen *
+			u_worldview *
+			//gl_in[i].gl_Position;
+			g_position[i];
+			
+		f_normal = g_normal[i];
+		f_tangent = g_tangent[i];
+		f_bitangent = g_bitangent[i];
+		f_lightdir = g_lightdir[i];
+		f_viewdir = g_viewdir[i];
+		f_texcoord = g_texcoord[i];
+		f_stcoord = g_stcoord[i];
+		EmitVertex();
+	}
+	EndPrimitive();
+}                                                                                      
+#endif
+common: // resume

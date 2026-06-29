@@ -1,0 +1,57 @@
+//
+//
+//
+vert:
+uniform vec3 u_light_position;
+uniform mat4 u_viewscreen;
+uniform mat4 u_nodeworld;
+uniform mat4 u_worldview;
+
+in vec4 a_position;
+in vec3 a_normal;
+
+out vec3 f_normal;
+out vec3 f_lightdir;
+out vec3 f_light_reflection;
+out vec3 f_viewdir;
+out vec3 f_color;
+void main()
+{
+       gl_Position = u_nodeworld * a_position;
+       f_lightdir = u_light_position - gl_Position.xyz;
+       f_normal = mat3(u_nodeworld)*a_normal;
+       f_light_reflection = reflect(                                                        
+               -normalize(f_lightdir),                                               
+               normalize(f_normal)                                                   
+       );
+       f_viewdir = (vec4(0.0, 0.0, 1.0, 1.0)*u_worldview).xyz;
+       f_color = vec3(1, 1, 1) - f_normal;
+       gl_Position = u_viewscreen * u_worldview * gl_Position;
+}                                                                                      
+
+frag:
+in vec3 f_normal;
+in vec3 f_lightdir;
+in vec3 f_light_reflection;
+in vec3 f_viewdir;
+in vec3 f_color;
+
+out vec3 fragColor;
+void main()                                                                        
+{                                                                                      
+       float l = length(f_lightdir);
+       float d = dot(                                                                  
+               normalize(f_normal),                                                  
+               normalize(f_lightdir)                                                 
+       ) / l;
+       float s = dot(                                                                  
+               normalize(f_light_reflection),                                               
+               normalize(f_viewdir)                                                  
+       );
+       vec3 lt = vec3(1.0, 1.0, 1.0);
+       fragColor =                                                                     
+               f_color * 0.4 +                                                       
+               (lt + f_color)*pow(max(2.5*d, 0.0), 3) +                              
+               lt * pow(max(s, 0.0), 64);
+}                                                                                      
+

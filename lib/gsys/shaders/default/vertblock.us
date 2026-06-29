@@ -1,0 +1,80 @@
+//
+//
+//
+#pragma once
+
+#ifdef def_use_prev_position
+
+#ifndef VERTBLOCK
+#define VERTBLOCK vertblock {	\
+	vec4 texcoord;		\
+	vec4 position_view;	\
+	vec3 normal_view;	\
+	vec4 position_view1;	\
+	vec3 normal_view1;	\
+}
+#endif
+
+#ifndef EMIT_VERTBLOCK
+#define EMIT_VERTBLOCK(d, t, p0, n0, p1, n1) {	\
+	d.texcoord = t;			\
+	d.position_view = p0;		\
+	d.normal_view = n0;		\
+	d.position_view1 = p1;		\
+	d.normal_view1 = n1;		\
+}
+#endif
+
+#ifndef COPY_VERTBLOCK
+#define COPY_VERTBLOCK(d, s) {			\
+	d.texcoord = s.texcoord;		\
+	d.position_view = s.position_view;	\
+	d.normal_view = s.normal_view;	\
+	d.position_view1 = s.position_view1;	\
+	d.normal_view1 = s.normal_view1;	\
+}
+#endif
+
+
+#else
+
+#ifndef VERTBLOCK
+#define VERTBLOCK vertblock {	\
+	vec4 texcoord;		\
+	vec4 position_view;	\
+	vec3 normal_view;	\
+}
+#endif
+
+#ifndef EMIT_VERTBLOCK
+#define EMIT_VERTBLOCK(d, t, p, n) {	\
+	d.texcoord = t;			\
+	d.position_view = p;		\
+	d.normal_view = n;		\
+}
+#endif
+
+#ifndef COPY_VERTBLOCK
+#define COPY_VERTBLOCK(d, s) {			\
+	d.texcoord = s.texcoord;		\
+	d.position_view = s.position_view;	\
+	d.normal_view = s.normal_view;	\
+}
+#endif
+
+#endif
+
+vert:
+out VERTBLOCK vertblock_out; 
+
+tesc:
+in  VERTBLOCK vertblock_in[];  
+out VERTBLOCK vertblock_out[]; 
+
+tese|geom:
+in  VERTBLOCK vertblock_in[];  
+out VERTBLOCK vertblock_out; 
+
+frag:
+in  VERTBLOCK vertblock_in;
+

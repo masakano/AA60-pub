@@ -1,0 +1,54 @@
+Checks: '-*,readability-identifier-naming'
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumConstantPrefix
+    value: e_
+  - key: readability-identifier-naming.EnumConstantIgnoredRegexp
+    value: '^def_[a-z0-9_]+$'
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalFunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.MethodCase
+    value: camelBack
+  - key: readability-identifier-naming.MemberCase
+    value: camelBack
+  - key: readability-identifier-naming.MemberPrefix
+    value: m_
+  - key: readability-identifier-naming.MemberIgnoredRegexp
+    value: '^(u|ub|c|def)_[a-z0-9_]+$'
+  - key: readability-identifier-naming.PublicMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PublicMemberIgnoredRegexp
+    value: '^m_[a-z][A-Za-z0-9]*$|^(u|ub|c|def)_[a-z0-9_]+$'
+  - key: readability-identifier-naming.LocalVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.StaticVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.StaticConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.StaticConstantPrefix
+    value: c_
+  - key: readability-identifier-naming.StaticConstantIgnoredRegexp
+    value: '^def_[a-z0-9_]+$'
+  - key: readability-identifier-naming.ClassConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.ClassConstantPrefix
+    value: c_
+  - key: readability-identifier-naming.ClassConstantIgnoredRegexp
+    value: '^def_[a-z0-9_]+$'
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalConstantPrefix
+    value: c_
+  - key: readability-identifier-naming.GlobalConstantIgnoredRegexp
+    value: '^def_[a-z0-9_]+$'
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: lower_case
+  - key: readability-identifier-naming.MacroDefinitionPrefix
+    value: e_

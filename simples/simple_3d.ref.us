@@ -1,0 +1,45 @@
+//
+//
+//
+#define def_use_uniform 
+common:
+uniform UB_GATHERED {
+	mat4 nodeworld;
+	mat4 worldview;
+	mat4 viewscreen;
+	vec4 colors[8];
+} ub_gathered;
+
+uniform mat4 u_nodeworld;
+uniform mat4 u_worldview;
+uniform mat4 u_viewscreen;
+
+vert:
+in vec4 a_position;
+
+void main()
+{
+#ifdef use_uniform
+	gl_Position = (u_viewscreen * u_worldview * u_nodeworld) * a_position;
+#else
+	gl_Position = (ub_gathered.viewscreen * ub_gathered.worldview * ub_gathered.nodeworld) * a_position;
+#endif
+}
+
+frag:
+in vec4 f_color; 
+
+layout (location = 0) out vec4 final_color0;
+uniform vec4 u_colors[8];
+
+void main()
+{
+#ifdef use_uniform
+	final_color0 = u_colors[gl_PrimitiveID % 8];
+#else
+	final_color0 = ub_gathered.colors[gl_PrimitiveID % 8];
+#endif
+}
+
+
+

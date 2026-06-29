@@ -1,0 +1,45 @@
+//
+//
+//
+frag:
+
+vec4 lcd_color(
+        sampler2D atlas_texture, const vec3 atlas_size,
+        const vec2 texcoord, const vec4 color, float shift, float gamma)
+{
+	vec4 current = texture2D(atlas_texture, texcoord);
+	vec4 previous = texture2D(atlas_texture, texcoord + vec2(-1., 0.) / atlas_size.xy);
+	vec4 next = texture2D(atlas_texture, texcoord + vec2(+1., 0.) / atlas_size.xy);
+
+	current = pow(current, vec4(1.0 / gamma));
+	previous = pow(previous, vec4(1.0 / gamma));
+
+	float r = current.r;
+	float g = current.g;
+	float b = current.b;
+
+	if (shift <= 0.333) {
+		float z = shift / 0.333;
+		r = mix(current.r, previous.b, z);
+		g = mix(current.g, current.r, z);
+		b = mix(current.b, current.g, z);
+	}
+	else if (shift <= 0.666) {
+		float z = (shift - 0.33) / 0.333;
+		r = mix(previous.b, previous.g, z);
+		g = mix(current.r, previous.b, z);
+		b = mix(current.g, current.r, z);
+	}
+	else if (shift < 1.0) {
+		float z = (shift - 0.66) / 0.334;
+		r = mix(previous.g, previous.r, z);
+		g = mix(previous.b, previous.g, z);
+		b = mix(current.r, previous.b, z);
+	}
+	float t = max(max(r, g), b);
+	vec4 result_color = vec4(color.rgb, (r + g + b) / 3.0);
+	result_color = t * result_color + (1.0 - t) * vec4(r, g, b, min(min(r, g), b));
+	return vec4(result_color.rgb, color.a * result_color.a);
+}
+
+common:

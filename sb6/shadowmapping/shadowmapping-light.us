@@ -1,0 +1,24 @@
+//
+//
+//
+vert:
+//#version 420 core
+
+uniform mat4 u_modelscreen;
+
+in vec4 a_position;
+
+void main()
+{
+    gl_Position = u_modelscreen * a_position;
+}
+
+frag:
+//#version 420 core
+
+layout (location = 0) out vec4 color;
+
+void main()
+{
+    color = vec4(gl_FragCoord.z);
+}

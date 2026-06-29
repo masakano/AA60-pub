@@ -1,0 +1,62 @@
+
+# temporary
+gstreamer/play_seq/frames
+gstreamer/play_seq/headers
+predictor/models
+
+# settings
+imgui.ini
+compile_commands.json
+
+# folders
+.vscode/
+.vs/
+.venv/
+__pycache__/
+assets/
+data/
+work/
+html/
+backup/
+RCS/
+build/
+bin/
+cache/
+fbxsdk/
+rec/
+
+# binary files
+main
+*.ptx
+*.exe
+*.elem
+*.dat
+*.o
+*.d
+*,v
+*~
+#*
+\.#*
+*.dll
+*.so
+*.a
+*.lib
+*.bin
+*.tgz
+*.pdb
+*.deb
+*.cache
+*.pptx
+*.odp
+*.pdf
+*.jpg
+*.png
+*.mp3
+*.mp4
+
+# video code sdk
+Video_Codec_SDK_*
+
+# excludes
+!rt2021/menu/mgenplus-1mn-bold.ttf
+!screenshots/*.jpg

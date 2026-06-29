@@ -1,0 +1,34 @@
+//
+//
+//
+#pragma once
+
+#include "ub_begin.h"
+
+#define def_ub_light_max 4
+#define e_ub_light_parallel 0
+#define e_ub_light_point 1
+
+UNIF_NAMESPACE(spu)
+
+struct UB_LIGHT_SOURCE {
+	vec3 position;
+	float _f0;
+	vec3 direction;
+	float _f1;
+	vec3 emission;
+	float _f2;
+	int type;
+	float radius;
+	float decay;
+	float exponent;
+};
+
+UNIF_BEGIN(UB_LIGHT)
+{
+	vec3 ambient;
+	float _f0;
+	UB_LIGHT_SOURCE sources[def_ub_light_max];
+} UNIF_END(ub_light);
+
+#include "ub_end.h"

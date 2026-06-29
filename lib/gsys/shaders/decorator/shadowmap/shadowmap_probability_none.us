@@ -1,0 +1,13 @@
+//
+//
+//
+#pragma once
+frag:
+float shadowmap_probability(const int layer, vec4 receiver_shadowtexc)
+{
+	return 1.0;
+}
+common:
+
+
+

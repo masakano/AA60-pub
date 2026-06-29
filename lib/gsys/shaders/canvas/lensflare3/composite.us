@@ -1,0 +1,33 @@
+//
+//
+//
+#include <canvas/vert.us>
+#include <default/ub_connect.us>
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+in vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+uniform sampler2D u_color0; // blar #0
+uniform sampler2D u_color1; // blar #1
+uniform sampler2D u_color2; // blar #2
+uniform sampler2D u_color3; // blar #3
+uniform sampler2D u_color4; // streak
+uniform sampler2D u_color5; // ghost
+
+uniform vec4 u_blur_coeff;
+uniform vec4 u_mix_coeff;
+
+void main()
+{
+	final_color0 = 
+		textureLod(u_color0, f_texcoord, ub_connect.sources[0].level) * u_blur_coeff[0] * u_mix_coeff[0] + 
+		textureLod(u_color1, f_texcoord, ub_connect.sources[1].level) * u_blur_coeff[1] * u_mix_coeff[0] + 
+		textureLod(u_color2, f_texcoord, ub_connect.sources[2].level) * u_blur_coeff[2] * u_mix_coeff[0] + 
+		textureLod(u_color3, f_texcoord, ub_connect.sources[3].level) * u_blur_coeff[3] * u_mix_coeff[0] + 
+		textureLod(u_color4, f_texcoord, 0) * u_mix_coeff[1] + 
+		textureLod(u_color5, f_texcoord, 0) * u_mix_coeff[2];
+}

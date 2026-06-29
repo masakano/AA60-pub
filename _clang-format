@@ -1,0 +1,90 @@
+#
+# clang-format-13
+#
+# TODO
+SortIncludes: false
+
+# base
+Standard: Latest
+Language: Cpp
+BasedOnStyle: google
+# BasedOnStyle: LLVM
+# ColumnLimit : 96
+ColumnLimit : 112
+
+# readability
+FixNamespaceComments : true
+PointerAlignment : Right
+# SpaceAfterTemplateKeyword : false
+# SpaceBeforeAssignmentOperators : true
+# BreakBeforeTernaryOperators : false
+
+# indent
+UseTab : ForIndentation
+IndentWidth: 8
+AccessModifierOffset: -8
+ConstructorInitializerIndentWidth: 8
+ContinuationIndentWidth : 8
+# Cpp11BracedListStyle: false
+IndentCaseLabels : false
+
+# align
+AlignAfterOpenBracket : AlwaysBreak
+AlignArrayOfStructures : Left
+AlignConsecutiveAssignments : None
+# AlignConsecutiveAssignments : Consecutive
+AlignConsecutiveBitFields : Consecutive
+AlignEscapedNewlines : Left
+AlignOperands : AlignAfterOperator
+AlignTrailingComments : true
+
+# alow
+AllowAllParametersOfDeclarationOnNextLine : true
+AllowShortBlocksOnASingleLine : Empty
+AllowShortCaseLabelsOnASingleLine : true
+AllowShortEnumsOnASingleLine : true
+AllowShortFunctionsOnASingleLine : true
+AllowShortIfStatementsOnASingleLine : WithoutElse
+# AllowShortIfStatementsOnASingleLine : Never
+AllowShortLoopsOnASingleLine : false
+
+# always
+AlwaysBreakBeforeMultilineStrings : true
+# AlwaysBreakTemplateDeclarations : true
+AlwaysBreakTemplateDeclarations : false
+
+# break
+BreakBeforeTernaryOperators : false
+# BreakConstructorInitializersBeforeComma : true
+BreakStringLiterals : false
+BreakBeforeBraces : Stroustrup
+BreakBeforeBinaryOperators : All
+
+# other
+BinPackArguments : true
+# PackConstructorInitializers : BinPack # (clang-13) 
+BinPackParameters : true
+BitFieldColonSpacing : After
+ConstructorInitializerAllOnOneLineOrOnePerLine : false
+EmptyLineAfterAccessModifier : Never
+EmptyLineBeforeAccessModifier : LogicalBlock
+# FixNamespaceComments : true
+IndentCaseBlocks : false
+ReferenceAlignment : Right
+ShortNamespaceLines: 1
+
+# space
+SpaceAfterCStyleCast : false
+SpaceAfterLogicalNot : false
+SpaceAfterTemplateKeyword : false
+SpaceBeforeAssignmentOperators : true
+SpaceBeforeCaseColon : false
+SpaceBeforeRangeBasedForLoopColon : false
+
+
+# brace style
+# BreakBeforeBraces : Attach
+# BreakBeforeBraces : Allman
+# BreakBeforeBraces : Linux
+# BreakBeforeBraces : GNU
+# BreakBeforeBraces : Custom

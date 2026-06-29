@@ -1,0 +1,41 @@
+//
+//
+//
+#include "common.us"
+
+#define def_use_shadowmap
+#define def_use_pbr_ibl_irradmap
+#define def_use_pbr_ibl_lightmap
+#define def_use_pbr_setup
+
+#include <decorator/material/pbr_material.us>
+#include <decorator/shadowmap/shadowmap.us>
+
+frag:
+void main ()
+{
+	vec3 delta_view = get_delta_view();
+	vec3 position_view = f_center_view + delta_view;
+	float density = get_density();
+
+	if (def_use_particleset != 0) {
+		if (pseudo_rand(position_view.xy) > density) {
+			discard;
+		}
+	}
+
+	pbr_packet_t p;
+	vec3 normal_view = normalize(delta_view);
+	pbr_setup(p, position_view, normal_view, vertblock_in.texcoord.xy);
+	p.light_radiance *= shadowmap(position_view);
+	final_color0 = pbr_exec(p);
+
+	if (def_use_particleset != 0) {
+		const float c_min_z = 0.1; // need parameterize
+		final_color0.a *= density * min(1.0, -position_view.z / c_min_z);
+	}
+	gl_FragDepth = get_position_frag_depth(position_view);
+}
+
+
+

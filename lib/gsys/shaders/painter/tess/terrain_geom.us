@@ -1,0 +1,56 @@
+//
+//
+//
+#pragma once
+#include <default/noise/fBm.us>
+#include <decorator/instance/instance.us>
+#include <decorator/material/material.us>
+#include <decorator/tess/tess.us>
+
+geom:
+
+layout(triangle_strip, max_vertices = 4) out;
+
+uniform int u_use_fbm = 0;
+uniform float u_fbm_frequency = 0.125;
+uniform float u_fbm_lacunarity = 2;
+uniform float u_fbm_decay = 0.6;
+uniform float u_fbm_ridge_rate = 0.5;
+
+
+//out float f_height;
+void geom_main()
+{
+	for(int i = 0; i < vertblock_in.length(); i++) {
+
+		float height;
+		if (u_use_fbm != 0) {
+			mat4 viewworld = inverse(instance_worldview());
+			vec4 position_world = viewworld * vertblock_in[i].position_view;
+			vec2 mapcoord = position_world.xz * u_fbm_frequency; 
+			float f0 = noise_fBm(mapcoord, u_fbm_lacunarity, u_fbm_decay);
+			float f1 = -abs(f0);
+			height = mix(f0, f1, u_fbm_ridge_rate) * ub_material.height_scale * 0.5; // ad-hoc
+		}
+		else {
+			vec2 mapcoord = vertblock_in[i].texcoord.xy;
+			height = texture(u_heightmap, mapcoord).r * ub_material.height_scale;
+		}
+		vec3 normal_view = vertblock_in[i].normal_view;
+		vec4 position_view = vertblock_in[i].position_view + vec4(normal_view * height, 0); // ad-hoc
+		
+		EMIT_VERTBLOCK(
+			vertblock_out, 
+			vertblock_in[i].texcoord,
+			position_view,
+			normal_view);
+
+		gl_Position = ub_composition.viewscreen * position_view;
+		EmitVertex();
+	}
+	EndPrimitive();
+}
+common: // resume
+
+
+

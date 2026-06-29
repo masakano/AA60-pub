@@ -1,0 +1,26 @@
+//
+//
+//
+#pragma once
+#define def_use_shadowmap
+#define def_use_projected_radius
+
+#include <decorator/instance/instance.us>
+#include <decorator/material/material.us> 
+
+vert:
+void pbr_main()
+{
+	instance_animation_set();
+	instance_emit();
+
+	if (ub_material.point_coord) {
+		vec4 position_node = instance_position_node();
+		mat4 nodefrag = instance_screenfrag() * instance_nodescreen();
+		vec4 position_frag = nodefrag * position_node;
+		gl_PointSize = projected_radius(nodefrag, position_frag.w, ub_material.point_size);
+	}
+	vertblock_out.texcoord *= ub_material.map_scale;
+	
+}
+common:

@@ -1,0 +1,49 @@
+//
+//
+//
+#include <default/ub_light.us>
+comp:
+
+layout (local_size_x = def_local_size, local_size_y = def_local_size, local_size_z = def_local_size) in;
+
+uniform sampler3D u_volume;
+uniform mat4 u_worldvolume;
+writeonly uniform image3D u_occlusion;
+
+void main()
+{
+	const vec3 texture_size = vec3(textureSize(u_volume, 0));
+	
+        const uint ix = gl_GlobalInvocationID.x;
+        const uint iy = gl_GlobalInvocationID.y;
+        const uint iz = gl_GlobalInvocationID.z;
+
+	vec3 p = vec3(ix, iy, iz) * 2.0 / texture_size - 1.0;
+
+	vec3 lightdir;
+	if (ub_light.sources[0].type == e_ub_light_parallel) {
+		lightdir = normalize(mat3(u_worldvolume) * ub_light.sources[0].direction);
+	}
+	else {
+		lightdir = normalize(ub_light.sources[0].position - p);
+	}
+	
+	vec3 step = lightdir / texture_size;
+	float s = 1.0;
+
+	const float decay = 0.5; // ad-hoc
+	while (true) {
+		p  += step;
+		if (any(lessThan(p, vec3(-1))) || any(greaterThan(p, vec3(+1)))) {
+			break;
+		}
+		vec3 tc = p * 0.5 + 0.5;
+		float d = texture(u_volume, tc).x;
+		s *= max(0, 1 - d * decay);
+	}
+        imageStore(u_occlusion, ivec3(ix,iy, iz), vec4(s));
+}
+
+
+
+

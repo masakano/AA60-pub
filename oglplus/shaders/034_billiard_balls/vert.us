@@ -1,0 +1,36 @@
+//
+//
+//
+vert:
+
+uniform mat4 u_nodeworld;
+uniform mat4 u_texture_matrix;
+uniform vec3 u_eye_position;
+uniform vec3 u_light_position;
+
+in vec4 a_position;
+in vec3 a_normal;
+in vec3 a_tangent;
+in vec2 a_texcoord;
+
+out vec4 g_position;
+out vec3 g_normal;
+out vec3 g_tangent;
+out vec3 g_bitangent;
+out vec3 g_lightdir;
+out vec3 g_viewdir;
+out vec2 g_texcoord;
+out vec2 g_stcoord;
+
+void main()                                                                        
+{                                                                                      
+	g_position  = u_nodeworld * a_position;
+	g_lightdir  = u_light_position - g_position.xyz;
+	g_viewdir   = u_eye_position - g_position.xyz;
+	g_normal    = (u_nodeworld * vec4(a_normal,  0.0)).xyz;
+	g_tangent   = (u_nodeworld * vec4(a_tangent, 0.0)).xyz;
+	g_bitangent = cross(g_normal, g_tangent);
+	g_texcoord  = (u_texture_matrix * vec4(a_texcoord,0.0,1.0)).xy;
+	g_stcoord   = a_texcoord;
+}
+common: // resume

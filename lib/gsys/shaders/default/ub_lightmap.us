@@ -1,0 +1,20 @@
+//
+//
+//
+#pragma once
+
+#include "ub_begin.h"
+
+UNIF_NAMESPACE(spu)
+UNIF_BEGIN(UB_LIGHTMAP) {
+	mat4 viewlightmap;
+	mat4 screenview;
+	uint lightmap_target;
+	uint lightmap_layer;
+	uint irradmap_target;
+	uint irradmap_layer;
+} UNIF_END(ub_lightmap);
+
+#include "ub_end.h"
+
+

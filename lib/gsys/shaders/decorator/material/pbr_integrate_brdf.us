@@ -1,0 +1,22 @@
+//
+//
+//
+#include <canvas/vert.us>
+#include "pbr_material.us"
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+
+in  vec2 f_texcoord;
+layout (location = 0) out vec2 final_color0;
+
+void main() 
+{
+	final_color0 = pbr_integrate_brdf(f_texcoord.x, f_texcoord.y);
+	//final_color0 = vec2(1);
+}
+
+
+

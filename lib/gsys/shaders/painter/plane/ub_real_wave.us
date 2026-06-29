@@ -1,0 +1,27 @@
+//
+//
+//
+#pragma once
+#include <default/ub_begin.h>
+
+UNIF_NAMESPACE(spu::gs_painter::plane)
+
+#define def_ub_real_wave_max 64 
+
+struct UB_REAL_WAVE_ELEMENT
+{
+	float direction;
+	float dirX;
+	float dirY;
+	float omega;
+	float amplitude;
+	float phase;
+	float _f0;
+	float _f1;
+};
+
+UNIF_BEGIN(UB_REAL_WAVE)
+{
+	UB_REAL_WAVE_ELEMENT elements[def_ub_real_wave_max];
+} UNIF_END(ub_real_wave);
+#include <default/ub_end.h>

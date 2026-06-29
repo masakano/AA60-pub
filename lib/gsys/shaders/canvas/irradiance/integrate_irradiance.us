@@ -1,0 +1,101 @@
+//
+//
+//
+#include <canvas/vert.us>
+#include <default/math.us>
+#include "ub_integrate_irradiance.us"
+
+#define e_texture_cube_map		0x8513 // GL_TEXTURE_CUBE_MAP
+#define e_texture_2d			0x0de1 // GL_TEXTURE_2D
+
+vert:
+void main() { canvas_main(); }
+
+frag:
+
+in  vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+uniform sampler2D	u_lightmap_sphere;
+uniform samplerCube	u_lightmap_cube;
+
+vec2 raydir_to_uv(const vec3 raydir)
+{
+	float theta = asin(raydir.y); // assume normalized
+	float phi = atan(raydir.x, raydir.z);
+	return vec2(phi / (2.0*M_PI), theta / M_PI) + 0.5;
+}
+
+vec3 uv_to_raydir(const vec2 uv)
+{
+	float phi   = (uv.x - 0.5) * 2*M_PI;
+	float theta = (uv.y - 0.5) * M_PI;
+
+	vec3 raydir = vec3(sin(phi) * cos(theta), sin(theta), cos(phi) * cos(theta));
+	return raydir;
+}
+
+vec3 texture_lightmap(const vec3 raydir)
+{
+	if (ub.lightmap_target == e_texture_2d) {
+		vec2 uv = raydir_to_uv(raydir);
+		return textureLod(u_lightmap_sphere, uv, 0).xyz;
+	}
+	else {
+		return textureLod(u_lightmap_cube, raydir, 0).xyz;
+	}
+}
+
+float rand()
+{
+	vec2 co = gl_FragCoord.xy;
+	return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+vec3 integrate_irrad_sphere(const vec3 raydir)
+{
+	vec3 irradiance = vec3(0.0);  
+	vec3 up = vec3(0, 1, 0);
+	vec3 right = normalize(cross(up, raydir));
+	
+	up = normalize(cross(raydir, right));
+
+	float sum_weight = 0.0;
+	vec3 sum_irradiance = vec3(0.0);
+
+	float theta = 0.0;
+	while (theta < 0.5 * M_PI) {
+		float sin_theta = sin(theta);
+		float cos_theta = cos(theta);
+
+		float coef = pow(cos_theta, ub.power) * sin_theta;
+		float pdf = cos_theta;
+		
+		for(float phi = 0.0; phi < 2.0 * M_PI; phi += ub.step * 2.0) {
+			float sin_phi = sin(phi);
+			float cos_phi = cos(phi);
+		
+			vec3 tangent = vec3(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
+			vec3 sampledir = tangent.x * right + tangent.y * up + tangent.z * raydir;
+			vec3 lightcolor = texture_lightmap(sampledir);
+			
+			sum_irradiance += lightcolor * coef / pdf;
+			sum_weight += 1.0;
+
+		}
+		theta += ub.step / pdf * 0.5;
+	}
+	irradiance = M_PI * sum_irradiance / sum_weight;
+	irradiance *= ub.power;
+	return irradiance;
+}
+
+void main ()
+{
+	vec3 raydir = uv_to_raydir(f_texcoord);
+	final_color0 = vec4(integrate_irrad_sphere(raydir), 1.0);
+}
+
+
+
+

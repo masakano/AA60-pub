@@ -1,0 +1,58 @@
+//
+//
+//
+#define def_use_projected_radius
+#include <decorator/instance/instance.us>
+#include <decorator/material/material.us>
+
+vert:
+flat out vec3 f_center_view;
+uniform mat4 u_viewfrag;
+
+void main()
+{
+	instance_animation_set();
+	gl_Position  = instance_position_screen();
+	f_center_view = instance_position_view().xyz;
+	gl_PointSize = projected_radius(u_viewfrag, gl_Position.w, ub_material.point_size) ;
+}
+
+frag:
+layout (location = 0) out vec4 final_color0;
+uniform mat4 u_viewfrag;
+flat in vec3 f_center_view;
+
+vec3 get_delta_view()
+{
+	vec2 point_coord = gl_PointCoord * 2.0 - 1.0;
+	
+	float delta_xy2 = dot(point_coord, point_coord);
+	if (delta_xy2 > 1.0) discard;
+
+	float z = sqrt(1.0 - delta_xy2);
+	point_coord.y *= -1;
+	return vec3(point_coord, z) * ub_material.point_size;
+}
+
+float get_position_frag_depth(const vec3 position_view)
+{
+	vec4 position_frag = u_viewfrag * vec4(position_view, 1);
+	return position_frag.z / position_frag.w;
+}
+
+float get_density()
+{
+	float x = length(gl_PointCoord * 2.0 - 1.0);
+	return 0.5 * cos(x * M_PI) + 0.5; // ad-hoc
+}
+
+float pseudo_rand(vec2 co)
+{
+	return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+common:
+        
+
+
+

@@ -1,0 +1,35 @@
+//
+//
+//
+comp:
+layout (local_size_x =1, local_size_y = 1) in;
+
+uniform float u_tonemap_min_luminance;
+uniform float u_tonemap_adapt_rate;
+
+layout(rgba32f) uniform readonly image2D u_captured_texture;
+layout(rgba32f) uniform coherent image2D u_ambient_texture;
+layout(r32f) uniform coherent image2D u_luminance_texture; 
+
+void main()
+{
+	vec4 ambient = imageLoad(u_captured_texture, ivec2(0,0));
+	{
+		vec4 prev_ambient = imageLoad(u_ambient_texture, ivec2(0,0));
+		if (any(isnan(prev_ambient))) prev_ambient = ambient;
+		ambient = mix(ambient, prev_ambient, u_tonemap_adapt_rate);
+		imageStore(u_ambient_texture, ivec2(0,0), ambient);
+	}
+
+	{
+		const vec3 RGB2Y = vec3(0.29900, 0.58700, 0.11400);
+		float luminance =  dot(ambient.rgb, RGB2Y); // RGB
+		float prev_luminance = imageLoad(u_luminance_texture, ivec2(0,0)).r;
+		if (isnan(prev_luminance)) prev_luminance = luminance;
+
+		luminance = mix(luminance, prev_luminance, u_tonemap_adapt_rate);
+		luminance = max(luminance, u_tonemap_min_luminance);
+		imageStore(u_luminance_texture, ivec2(0,0), vec4(luminance));
+	}
+
+}

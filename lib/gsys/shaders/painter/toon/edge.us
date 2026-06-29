@@ -1,0 +1,36 @@
+//
+//
+//
+#include "vert.us"
+#include "frag.us"
+
+vert:
+uniform float u_edge_width;
+void main()
+{
+	toon_main();
+
+	vec3 normal_view   = instance_normal_view();
+	vec4 position_screen = instance_position_screen();
+	vec2 normal_screen = instance_normal_screen().xy;
+	
+	vec2 expand_screen = normal_screen * u_edge_width * position_screen.w;
+	gl_Position = position_screen + vec4(expand_screen, 0, 0);
+}
+
+frag:
+layout (location = 0) out vec4 final_color0;
+
+vec4 toon_edge_main()
+{
+	vec2 texcoord = vertblock_in.texcoord.xy;
+	vec4 albedo = texture_albedomap(texcoord) * ub_material.albedo * u_toon_ao; 
+	if (albedo.a < ub_material.min_alpha) discard;
+	//return albedo;
+	return mix(albedo, u_edge_color, u_edge_mix_rate);
+}
+
+void main()
+{
+	final_color0 = toon_edge_main();
+}

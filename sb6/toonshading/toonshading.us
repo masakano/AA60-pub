@@ -1,0 +1,56 @@
+//
+//
+//
+vert:
+
+uniform mat4 u_modelview;
+uniform mat4 u_viewscreen;
+
+in vec4 a_position;
+in vec3 a_normal;
+
+out VS_OUT
+{
+    vec3 normal;
+    vec3 view;
+} vs_out;
+
+void main()
+{
+    vec4 pos_vs = u_modelview * a_position;
+
+    // Calculate eye-space normal and position
+    vs_out.normal = mat3(u_modelview) * a_normal;
+    vs_out.view = pos_vs.xyz;
+
+    // Send clip-space position to primitive assembly
+    gl_Position = u_viewscreen * pos_vs;
+}
+
+//#version 410 core
+frag:
+
+uniform sampler1D u_toon_texure;
+
+uniform vec3 u_lignt_position = vec3(30.0, 30.0, 100.0);
+
+in VS_OUT
+{
+    vec3 normal;
+    vec3 view;
+} fs_in;
+
+out vec4 color;
+
+void main()
+{
+    // Calculate per-pixel normal and light vector
+    vec3 N = normalize(fs_in.normal);
+    vec3 L = normalize(u_lignt_position - fs_in.view);
+
+    // Simple N dot L diffuse lighting
+    float tc = pow(max(0.0, dot(N, L)), 5.0);
+
+    // Sample from cell shading texture
+    color = texture(u_toon_texure, tc) * (tc * 0.8 + 0.2);
+}

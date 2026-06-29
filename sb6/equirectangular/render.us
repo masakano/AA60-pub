@@ -1,0 +1,62 @@
+//
+//
+//
+vert:
+//#version 410 core
+
+uniform mat4 u_modelview;
+uniform mat4 u_viewscreen;
+
+in vec4 a_position;
+in vec3 a_normal;
+
+out VS_OUT
+{
+    vec3 normal;
+    vec3 view;
+} vs_out;
+
+void main()
+{
+    vec4 pos_vs = u_modelview * a_position;
+
+    vs_out.normal = mat3(u_modelview) * a_normal;
+    vs_out.view = pos_vs.xyz;
+
+    gl_Position = u_viewscreen * pos_vs;
+}
+
+//#version 410 core
+frag:
+
+uniform sampler2D u_envmap_texture;
+
+in VS_OUT
+{
+    vec3 normal;
+    vec3 view;
+} fs_in;
+
+out vec4 color;
+
+void main()
+{
+    // u will be our normalized view vector
+    vec3 u = normalize(fs_in.view);
+
+    // Reflect u about the plane defined by the normal at the fragment
+    vec3 r = reflect(u, normalize(fs_in.normal));
+
+    vec2 tc;
+
+    tc.y = r.y; r.y = 0.0;
+    tc.x = normalize(r).x * 0.5;
+
+    float s = sign(r.z) * 0.5;
+
+    tc.s = 0.75 - s * (0.5 - tc.s);
+    tc.t = 0.5 + 0.5 * tc.t;
+
+    // Sample from scaled and biased texture coordinate
+    color = texture(u_envmap_texture, tc);
+}

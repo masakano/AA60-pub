@@ -1,0 +1,28 @@
+//
+//
+//
+vert:
+in vec4 a_position;
+in vec4 a_color;
+out vec4 f_diffuse;
+void main()
+{
+	gl_Position = a_position;
+	gl_PointSize = 96.0/*64.0*/;
+	f_diffuse = a_color;
+}
+
+frag:
+uniform sampler2D u_albedo;
+in vec4 f_diffuse; 
+layout (location = 0) out vec4 final_color0;
+
+void main()
+{
+	vec4 tcolor = texture(u_albedo, gl_PointCoord);
+	if (tcolor.a < 0.25) discard;
+	final_color0 = tcolor * f_diffuse;
+}
+
+
+

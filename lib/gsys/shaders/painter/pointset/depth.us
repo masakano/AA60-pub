@@ -1,0 +1,22 @@
+//
+//
+//
+#include "common.us"
+
+frag:
+void main ()
+{
+	vec3 delta_view = get_delta_view();
+	vec3 position_view = f_center_view + delta_view;
+	float density = get_density();
+
+	if (def_use_particleset != 0) {
+		if (pseudo_rand(position_view.xy) > density * ub_material.albedo.a) {
+			discard;
+		}
+	}
+	gl_FragDepth = get_position_frag_depth(position_view);
+}
+
+
+

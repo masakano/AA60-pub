@@ -1,0 +1,138 @@
+# apps
+
+set(sources00 
+  samples/001_triangle.cpp 
+  samples/001_triangle_glsl120.cpp 
+  samples/002_rect.cpp 
+  samples/002_shader_lit.cpp 
+  samples/002_triangle.cpp 
+  samples/003_rect.cpp 
+  samples/003_triangle.cpp 
+  samples/004_newton.cpp 
+  samples/004_rect.cpp 
+  samples/005_mandelbrot.cpp 
+  samples/006_cartoon_sun.cpp 
+  samples/006_newton_zoom.cpp 
+  samples/007_cubic_bezier.cpp 
+  samples/007_voronoi.cpp 
+  samples/008_lyapunov.cpp 
+  samples/009_metaballs.cpp
+)
+
+set(sources01 
+  samples/010_cmy_cube_glsl120.cpp 
+  samples/010_rgb_cube.cpp 
+  samples/011_writing.cpp 
+  samples/012_checker_cube.cpp 
+  samples/012_checker_sphere.cpp 
+  samples/013_spiral_sphere.cpp 
+  samples/013_striped_cubes.cpp 
+  samples/014_multi_cube.cpp 
+  samples/014_multi_cube_gs.cpp 
+  samples/014_multi_cube_ub.cpp 
+  samples/015_graph.cpp 
+  samples/015_obj_mesh.cpp 
+  samples/015_shaded_cube.cpp 
+  samples/016_cartoon_torus.cpp 
+  samples/016_metallic_torus.cpp 
+  samples/016_noise_torus.cpp 
+  samples/016_textured_cube.cpp 
+  samples/016_textured_cube_glsl120.cpp 
+  samples/017_clipped_torus.cpp 
+  samples/017_phong_torus.cpp 
+  samples/017_single_pass_edges.cpp 
+  samples/017_sky_box.cpp 
+  samples/018_atomic_counters.cpp 
+  samples/018_newton_landscape.cpp 
+  samples/018_particle_system.cpp 
+  samples/018_stained_glass_cube.cpp 
+  samples/019_bpatch_tess.cpp 
+  samples/019_gs_tessell.cpp 
+  samples/019_helium.cpp 
+  samples/019_honeycomb_cube.cpp
+  samples/019_subsurf_scatter.cpp 
+  samples/019_tessellation.cpp
+)
+
+set(sources02 
+  samples/020_checkered_objects.cpp 
+  samples/020_cube_mapping.cpp 
+  samples/020_golf_ball.cpp 
+  samples/020_icosphere.cpp 
+  samples/020_octree.cpp 
+  samples/020_shaded_objects.cpp 
+  samples/020_texture_projection.cpp 
+  samples/021_cloud.cpp 
+  samples/021_cube_mapping.cpp 
+  samples/021_morphing.cpp 
+  samples/021_overdraw.cpp 
+  samples/021_translucent_arrow.cpp 
+  samples/021_wooden_crate.cpp 
+  samples/022_blender_mesh.cpp 
+  samples/022_parallax_map.cpp 
+  samples/022_vase.cpp 
+  samples/022_volumetric_light.cpp 
+  samples/022_xyz_planes.cpp 
+  samples/023_lattice_torus.cpp 
+  samples/023_reflected_cube.cpp 
+  samples/023_sky.cpp 
+  samples/023_waves.cpp 
+  samples/024_extruded_torus.cpp 
+  samples/024_particle_trails.cpp 
+  samples/024_simple_picking.cpp 
+  samples/025_multi_viewport.cpp 
+  samples/025_recursive_texture.cpp 
+  samples/025_reflected_torus.cpp 
+  samples/025_rendered_texture.cpp 
+  samples/025_subroutines.cpp 
+  samples/026_clouds.cpp 
+  samples/026_furry_torus.cpp 
+  samples/026_shape_halo.cpp 
+  samples/026_ssao.cpp 
+  samples/026_stencil_shadow.cpp 
+  samples/027_depth_of_field.cpp 
+  samples/027_flow.cpp 
+  samples/027_reflected_shape.cpp 
+  samples/027_smoke_trails.cpp 
+  samples/027_tessellation.cpp 
+  samples/028_depth_map_sss.cpp 
+  samples/028_glass_shape.cpp 
+  samples/028_ripples.cpp 
+  samples/028_volume.cpp 
+  samples/029_fire_hydrant.cpp 
+  samples/029_flares.cpp 
+  samples/029_gpu_sort_tfb.cpp 
+  samples/029_muddy_stones.cpp 
+  samples/029_shadow_mapping.cpp 
+  samples/029_surface.cpp 
+  samples/029_waves.cpp
+)
+
+set(sources03 
+  samples/030_cube_mapping.cpp 
+  samples/030_light_rays.cpp 
+  samples/030_pin_display.cpp 
+  samples/030_pool_tiles.cpp 
+  samples/030_rain.cpp 
+  samples/030_shadow_volume.cpp 
+  samples/031_blob.cpp 
+  samples/031_brick_torus.cpp 
+  samples/031_fog.cpp 
+  samples/031_motion_blur.cpp 
+  samples/031_neon.cpp 
+  samples/031_sketch.cpp 
+  samples/032_bar_grid.cpp 
+  samples/032_object_tracking.cpp 
+  samples/032_transitions.cpp 
+  samples/033_metal_and_glass.cpp 
+  samples/033_steam.cpp 
+  samples/034_billiard_balls.cpp 
+  samples/040_jelly_cube.cpp
+  )
+
+set(sources
+  ${sources00}
+  ${sources01}
+  ${sources02}
+  ${sources03}
+  samples/main.cpp )

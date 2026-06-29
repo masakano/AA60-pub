@@ -1,0 +1,82 @@
+//
+//
+//
+#define e_render_default 0
+#define e_render_simple 1
+#define e_render_fill 2
+#define e_render_lcd 3
+#define e_render_distance_field 4
+
+#ifndef def_render_mode
+#define def_render_mode e_render_default
+#endif
+
+#if def_render_mode == e_render_lcd
+#include "lcd.us"
+#endif
+
+vert:
+
+uniform mat4 u_textscreen;
+uniform vec4 u_color;
+
+in vec3 a_vertex;
+in vec2 a_texcoord;
+in vec4 a_color;
+in float a_shift;
+in float a_gamma;
+
+out vec4 f_color;
+out vec2 f_texcoord;
+out float f_shift;
+out float f_gamma;
+
+void main()
+{
+	f_shift = a_shift;
+	f_gamma = a_gamma;
+	f_color = a_color * u_color;
+	f_texcoord = a_texcoord;
+	gl_Position = u_textscreen * vec4(a_vertex, 1.0);
+}
+
+frag:
+
+uniform sampler2D u_texture;
+uniform vec3 u_atlas_size;
+
+in vec4 f_color;
+in vec2 f_texcoord;
+in float f_shift;
+in float f_gamma;
+
+out vec4 final_color;
+
+void main()
+{
+	
+#if def_render_mode == e_render_default
+	float a = texture2D(u_texture, f_texcoord).r;
+	final_color = f_color * pow(a, 1.0 / f_gamma);
+#endif
+
+#if def_render_mode == e_render_simple
+	float a = texture2D(u_texture, f_texcoord.xy).r;
+	final_color = vec4(f_color.rgb, f_color.a*a);
+#endif
+	
+#if def_render_mode == e_render_fill
+	final_color = f_color;
+#endif
+
+#if def_render_mode == e_render_distance_field
+	float dist = texture2D(u_texture, f_texcoord).r;
+	float width = fwidth(dist);
+	float alpha = smoothstep(0.5-width, 0.5+width, dist);
+	final_color = vec4(f_color.rgb, alpha*f_color.a);
+#endif
+
+#if def_render_mode == e_render_lcd
+	final_color = lcd_color(u_texture, u_atlas_size, f_texcoord, f_color, f_shift, f_gamma);
+#endif	
+}

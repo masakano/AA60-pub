@@ -1,0 +1,31 @@
+//
+//
+//
+#include <canvas/vert.us>
+#ifndef def_vflip 
+#define def_vflip 1
+#endif
+vert:
+void main() { canvas_main(); }
+
+frag:
+
+uniform sampler2D u_color0;
+in  vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+void main()
+{
+	if (def_vflip == 1) {
+		final_color0 = textureLod(u_color0, vec2(f_texcoord.x, 1.0 - f_texcoord.y), 0);
+	}
+	else {
+		final_color0 = textureLod(u_color0, vec2(f_texcoord.x, f_texcoord.y), 0);
+	}
+}
+
+
+
+
+
+

@@ -1,0 +1,33 @@
+//
+//
+//
+vert:
+out vec2 f_texcoord;
+void main()
+{
+    const vec4 vertices[] = vec4[](
+	    vec4(-1.0, -1.0, 0.5, 1.0),
+	    vec4( 1.0, -1.0, 0.5, 1.0),
+	    vec4(-1.0,  1.0, 0.5, 1.0),
+	    vec4( 1.0,  1.0, 0.5, 1.0));
+
+    gl_Position = vertices[gl_VertexID];
+    f_texcoord = gl_Position.xy * 0.5 + 0.5;
+    
+}
+
+frag:
+
+uniform sampler2D u_hdr_image;
+uniform float u_exposure;
+
+in  vec2 f_texcoord;
+out vec4 color;
+
+void main()
+{
+	//vec4 c = texelFetch(u_hdr_image, 2 * ivec2(gl_FragCoord.xy), 0);
+	vec4 c = texture(u_hdr_image, f_texcoord);
+	c.rgb = vec3(1.0) - exp(-c.rgb * u_exposure);
+	color = c;
+}

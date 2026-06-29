@@ -1,0 +1,25 @@
+//
+//
+//
+#define def_use_shadowmap
+
+#include "vert.us"
+#include <decorator/material/material.us>
+#include <decorator/shadowmap/shadowmap.us>
+
+vert:
+void main()
+{
+	pbr_main();
+	shadowmap();
+}
+
+frag:
+void main()
+{
+	vec2 texcoord = vertblock_in.texcoord.xy;
+	float alpha = texture_albedomap(texcoord).a * ub_material.albedo.a;
+	if (alpha < 0.5) discard;
+
+}
+

@@ -1,0 +1,21 @@
+//
+//
+//
+comp:
+
+layout (local_size_x = def_local_size, local_size_y = def_local_size, local_size_z = def_local_size) in;
+layout(r32ui) uniform uimage3D u_uint_density_texture;
+layout(r32f) uniform image3D u_density_texture;
+
+void main()
+{
+	ivec3 pos = ivec3(gl_GlobalInvocationID);
+	ivec3 size = imageSize(u_uint_density_texture);
+
+	if (pos.x >= 0 && pos.x < size.x && 
+	    pos.y >= 0 && pos.y < size.y && 
+	    pos.z >= 0 && pos.z < size.z) {
+		float pixel = float(imageLoad(u_uint_density_texture, pos).x) / def_uint_scale;
+		imageStore(u_density_texture, pos, vec4(pixel));
+	}
+}

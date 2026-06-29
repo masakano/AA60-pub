@@ -1,0 +1,35 @@
+//
+//
+//
+#include <decorator/instance/instance.us>
+#include "default/math.us"
+
+vert:
+
+in mat4 a_instance_screennode;
+in vec4 a_instance_screentexc;
+out vec2 f_texcoord;
+void main()
+{
+	const vec2 positions[4] = {
+		vec2(-1, -1), vec2(+1, -1),
+		vec2(-1, +1), vec2(+1, +1),
+	};
+	vec4 position = vec4(positions[gl_VertexID], 0, 1);
+	gl_Position = instance_nodescreen() * a_instance_screennode * position;
+	f_texcoord.x = position.x * a_instance_screentexc.x + a_instance_screentexc.z;
+	f_texcoord.y = position.y * a_instance_screentexc.y + a_instance_screentexc.w;
+}
+frag:
+
+uniform sampler2D u_albedomap;
+in vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;  // diffuse (for reference)
+
+void main ()
+{
+	const float min_alpha = 0.1;
+	vec4 decal_color = texture(u_albedomap, f_texcoord);
+	if (decal_color.a < min_alpha) discard;
+	final_color0 = decal_color;
+}

@@ -1,0 +1,171 @@
+//
+//
+//
+#pragma once
+#include <default/ub_material.us>
+#include <default/ub_light.us>
+#include <default/ub_lightmap.us>
+#include <default/math.us>
+
+common:
+#define e_texture_cube_map 0x8513        // GL_TEXTURE_CUBE_MAP
+#define e_texture_2d 0x0de1              // GL_TEXTURE_2D
+#define e_texture_cube_map_array 0x9009  // GL_TEXTURE_CUBE_MAP_ARRAY
+#define e_texture_2d_array 0x8c1a        // GL_TEXTURE_2D_ARRAY
+
+common:
+
+uniform sampler2D u_albedomap;
+uniform sampler2D u_specularmap;
+uniform sampler2D u_emissionmap;
+uniform sampler2D u_armmap;
+uniform sampler2D u_normalmap;
+uniform sampler2D u_heightmap;
+uniform samplerCube u_lightmap_cube;
+uniform sampler2D u_lightmap_sphere;
+uniform samplerCubeArray u_lightmap_cube_array;
+uniform sampler2DArray u_lightmap_sphere_array;
+uniform sampler2D u_irradmap_sphere;
+uniform sampler2DArray u_irradmap_sphere_array;
+
+frag:
+vec2 texture_texcoord(const vec2 texcoord)
+{
+	if (ub_material.point_coord) return gl_PointCoord;
+	return texcoord;
+}
+
+vec4 texture_albedomap(const vec2 texcoord)
+{
+	return texture(u_albedomap, texture_texcoord(texcoord));
+}
+vec4 texture_albedomap(const vec2 texcoord, float lod)
+{
+	return textureLod(u_albedomap, texture_texcoord(texcoord), lod);
+}
+
+vec4 texture_specularmap(const vec2 texcoord)
+{
+	return texture(u_specularmap, texture_texcoord(texcoord));
+}
+
+vec4 texture_emissionmap(const vec2 texcoord)
+{
+	return texture(u_emissionmap, texture_texcoord(texcoord));
+}
+
+vec3 texture_armmap(const vec2 texcoord)
+{
+	return texture(u_armmap, texture_texcoord(texcoord)).rgb;
+}
+
+vec3 texture_normalmap(const vec2 texcoord, const vec3 position, const vec3 normal)
+{
+	vec2 corrected_texcoord = texture_texcoord(texcoord);
+
+	vec3 normal_tangent = texture(u_normalmap, corrected_texcoord).xyz;
+	if (!all(equal(normal_tangent, vec3(0)))) {
+		normal_tangent = normalize(normal_tangent * 2.0 - 1.0);
+		
+		vec3 dpx = dFdx(position);
+		vec3 dpy = dFdy(position);
+		vec2 dtx = dFdx(corrected_texcoord);
+		vec2 dty = dFdy(corrected_texcoord);
+
+		vec3 N   = normalize(normal);
+		vec3 T   = normalize(dpx * dty.y - dpy * dtx.y);
+		vec3 B   = normalize(cross(N, T));
+		mat3 TBN = mat3(T, B, N);
+		
+		float detT = length(dpx * dty.y - dpy * dtx.y);
+		if (detT == 0) {
+			return normal_tangent.yzx;
+		}
+		else {
+			return TBN * normal_tangent;
+		}
+	}
+
+	float height = texture(u_heightmap, corrected_texcoord).r;
+	if (height != 0) {
+		vec3 displaced_position = position + normal * height * ub_material.height_scale;;
+		vec3 ddx = dFdx(displaced_position);
+		vec3 ddy = dFdy(displaced_position);
+		return normalize(cross(ddx, ddy));
+	}
+	return normal;
+
+}
+
+vec2 texture_sphere_uv(const vec3 raydir)
+{
+	float theta = asin(raydir.y);  // assume normalized
+	float phi = atan(raydir.x, -raydir.z);
+	return vec2(phi / (2.0 * M_PI), theta / M_PI) + 0.5;
+}
+
+vec3 texture_lightmap(const vec3 raydir_view, float roughness, vec3 default_ambient, float layer = 0)
+{
+	vec3 raydir_lightmap = normalize(mat3(ub_lightmap.viewlightmap) * raydir_view);
+
+	switch (ub_lightmap.lightmap_target) {
+	case e_texture_cube_map: {
+		float lod = float(textureQueryLevels(u_lightmap_cube) - 1) * roughness;
+		return textureLod(u_lightmap_cube, raydir_lightmap, lod).xyz;
+	}
+	case e_texture_cube_map_array: {
+		float lod = float(textureQueryLevels(u_lightmap_cube_array) - 1) * roughness;
+		return textureLod(u_lightmap_cube_array, vec4(raydir_lightmap, layer), lod).xyz;
+	}
+	case e_texture_2d: {
+		float lod = float(textureQueryLevels(u_lightmap_sphere) - 1) * roughness;
+		vec2 uv = texture_sphere_uv(raydir_lightmap);
+		return textureLod(u_lightmap_sphere, uv.xy, lod).xyz;
+	}
+	case e_texture_2d_array: {
+		float lod = float(textureQueryLevels(u_lightmap_sphere_array) - 1) * roughness;
+		vec2 uv = texture_sphere_uv(raydir_lightmap);
+		return textureLod(u_lightmap_sphere_array, vec3(uv.xy, layer), lod).xyz;
+	}
+	default: return default_ambient;
+	};
+}
+vec3 texture_irradmap(const vec3 raydir_view, vec3 default_ambient, float layer = 0)
+{
+	vec3 raydir_lightmap = normalize(mat3(ub_lightmap.viewlightmap) * raydir_view);
+
+	switch (ub_lightmap.irradmap_target) {
+	case e_texture_2d: {
+		vec2 uv = texture_sphere_uv(raydir_lightmap);
+		return texture(u_irradmap_sphere, uv.xy).xyz;
+	}
+	case e_texture_2d_array: {
+		vec2 uv = texture_sphere_uv(raydir_lightmap);
+		return texture(u_irradmap_sphere_array, vec3(uv.xy, layer)).xyz;
+	}
+	default: return default_ambient;
+	};
+}
+
+void light_direct(const UB_LIGHT_SOURCE ls, const vec3 position, out vec3 direction, out vec3 radiance)
+{
+	radiance = ls.emission;
+	
+	if (ls.type == e_ub_light_parallel) {  // parallel
+		direction = normalize(ls.direction);
+	}
+	else {
+		direction = normalize(ls.position - position);
+		if (ls.decay > 0.0) {
+			float distance = length(ls.position - position);
+			radiance *= pow(distance, -max(0, ls.decay));
+		}
+		if (ls.exponent > 0.0) {
+			float cosine = max(0.0, dot(direction, normalize(ls.direction)));
+			radiance *= pow(cosine, ls.exponent);
+		}
+		
+	}
+}
+
+common:  // pop back

@@ -1,0 +1,24 @@
+//
+//
+//
+#include <canvas/vert.us>
+#include <canvas/tonemap/tonemap_load_color.us>
+
+vert:
+void main()
+{
+	canvas_main();
+}
+
+frag:
+in vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+void main()
+{
+	vec4 color0 = tonemap_load_color0(f_texcoord);
+	final_color0 = max(vec4(0.0), color0 + ub_connect.sources[0].bias) * ub_connect.sources[0].gain;
+}
+
+
+

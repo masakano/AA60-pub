@@ -1,0 +1,26 @@
+//
+//
+//
+#pragma once
+
+vert:
+void shadowmap() {}
+
+frag:
+float shadowmap(const vec3 position_view)
+{
+	if (ub_shadowmap.enable) {
+		float p = 1.0;
+		for (int layer = 0; layer < ub_shadowmap.layer_count; layer++) {
+			vec4 receiver_shadowtexc =
+				ub_shadowmap.view_to_shadowtexc[layer] * vec4(position_view, 1);
+			if (shadowmap_is_valid(receiver_shadowtexc)) {
+				p *= shadowmap_probability(layer, receiver_shadowtexc);
+			}
+		}
+		return p;
+	}
+	return 1.0;
+
+}
+common:

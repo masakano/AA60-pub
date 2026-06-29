@@ -1,0 +1,22 @@
+//
+//
+//
+#pragma once
+
+#define e_pbr_debug_none		0x0000
+#define e_pbr_debug_single		0x0001
+#define e_pbr_debug_ibl			0x0002
+#define e_pbr_debug_albedo		0x0003
+#define e_pbr_debug_metallic		0x0004
+#define e_pbr_debug_roughness		0x0005
+#define e_pbr_debug_ao			0x0006
+#define e_pbr_debug_normal		0x0007
+#define e_pbr_debug_single_ndf		0x0008
+#define e_pbr_debug_single_g		0x0009
+#define e_pbr_debug_single_f		0x000a
+#define e_pbr_debug_single_specular	0x000b
+#define e_pbr_debug_ibl_f		0x000c
+#define e_pbr_debug_ibl_irrad		0x000d
+#define e_pbr_debug_ibl_brdf		0x000e
+#define e_pbr_debug_ibl_reflect		0x000f
+#define e_pbr_debug_light_radiance	0x0010

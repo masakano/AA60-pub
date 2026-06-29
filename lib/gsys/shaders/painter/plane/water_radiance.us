@@ -1,0 +1,21 @@
+//
+//
+//
+#pragma once
+#include "common.us"
+#include "fakewater_radiance.us"
+#include "realwater_radiance.us"
+
+frag:
+
+uniform int u_use_realwater;
+vec4 plane_radiance(const vec3 raydir_view)
+{
+	if (u_use_realwater == 0) {
+		return fakewater_plane_radiance(raydir_view);
+	}
+	else {
+		return realwater_plane_radiance(raydir_view);
+	}
+}
+common:

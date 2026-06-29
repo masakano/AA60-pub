@@ -1,0 +1,27 @@
+if(DEFINED AA60_PROJECT_OPTIONS_INCLUDED)
+  return()
+endif()
+set(AA60_PROJECT_OPTIONS_INCLUDED ON)
+
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 20)
+endif()
+
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(NOT DEFINED CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
+
+
+if(MSVC)
+  # no change
+else()
+  # set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -Werror" CACHE STRING "Flags used for RelWithDebInfo builds." FORCE)
+  # set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -Werror" CACHE STRING "Flags used for RelWithDebInfo builds." FORCE)
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "Flags used for RelWithDebInfo builds." FORCE)
+  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "Flags used for RelWithDebInfo builds." FORCE)
+endif()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

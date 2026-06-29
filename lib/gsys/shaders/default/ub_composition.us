@@ -1,0 +1,22 @@
+//
+//
+//
+#pragma once
+#include "ub_begin.h"
+
+UNIF_NAMESPACE(spu)
+UNIF_BEGIN(UB_COMPOSITION) {
+
+	mat4 screenfrag;
+	mat4 viewscreen;
+	mat4 screenview;
+	
+	mat4 worldview;
+	mat4 viewworld;
+
+	mat4 worldview1;
+	mat4 viewworld1;
+	
+} UNIF_END(ub_composition);
+
+#include "ub_end.h"

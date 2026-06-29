@@ -1,0 +1,18 @@
+{
+  global:
+	glad_*;
+	*spu_gl_*;
+	*spu_graphics_*;
+	*spu_inventory_*;
+	*spu_renderstate_*;
+	*spu_frame_*;
+	*spu_array_*;
+	*spu_print_*;
+	*spu_printf*;
+	*spu_shader_*;
+	*spu_texture_*;
+	*spu_query_*;
+	*spu_video_*;
+  local:
+	*;
+};

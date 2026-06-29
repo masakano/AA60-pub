@@ -1,0 +1,62 @@
+//
+//
+//
+#include <default/ub_connect.us>
+
+vert:
+
+out vec2 f_texcoord1;
+out vec2 f_texcoord2;
+out vec2 f_texcoord3;
+out vec2 f_texcoord4;
+
+uniform vec4 u_texcoord_scaler;
+
+void main() 
+{
+	const vec2 positions[4] = {
+		vec2(-1, -1), vec2(+1, -1),
+		vec2(-1, +1), vec2(+1, +1),
+	};
+	vec4 position = vec4(positions[gl_VertexID], 0, 1);
+	vec2 texcoord  = positions[gl_VertexID] * 0.5 + vec2(0.5, 0.5);
+
+	f_texcoord1 = (texcoord - 0.5) * u_texcoord_scaler[0] + 0.5;
+	f_texcoord2 = (texcoord - 0.5) * u_texcoord_scaler[1] + 0.5;
+	f_texcoord3 = (texcoord - 0.5) * u_texcoord_scaler[2] + 0.5;
+	f_texcoord4 = (texcoord - 0.5) * u_texcoord_scaler[3] + 0.5;
+	gl_Position = position;
+}
+
+frag:
+
+in vec2 f_texcoord1;
+in vec2 f_texcoord2;
+in vec2 f_texcoord3;
+in vec2 f_texcoord4;
+layout (location = 0) out vec4 final_color0;
+
+uniform vec4 u_color_coeff[4];
+uniform sampler2D u_color0;
+uniform sampler2D u_color1;
+uniform sampler2D u_color2;
+uniform sampler2D u_color3;
+
+void main()
+{
+	const int level0 = ub_connect.sources[0].level;
+	const int level1 = ub_connect.sources[1].level;
+	const int level2 = ub_connect.sources[2].level;
+	const int level3 = ub_connect.sources[3].level;
+
+	const vec4 coeff0 = u_color_coeff[0];
+	const vec4 coeff1 = u_color_coeff[1];
+	const vec4 coeff2 = u_color_coeff[2];
+	const vec4 coeff3 = u_color_coeff[3];
+	
+	final_color0 = 
+		textureLod(u_color0, f_texcoord1, level0) * textureLod(u_color3, f_texcoord1, level3).g * coeff0 +
+		textureLod(u_color0, f_texcoord2, level0) * textureLod(u_color3, f_texcoord2, level3).g * coeff1 +
+		textureLod(u_color1, f_texcoord3, level1) * textureLod(u_color3, f_texcoord3, level3).g * coeff2 +
+		textureLod(u_color2, f_texcoord4, level2) * textureLod(u_color3, f_texcoord4, level3).g * coeff3;
+}

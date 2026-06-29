@@ -1,0 +1,23 @@
+//
+//
+//
+#pragma once
+#include "noise2D.us"
+
+float noise_fBm(const vec2 p, float lacunarity, float decay)
+{
+	float freq = 1.0;
+	float amp = 1.0 - decay;
+	float sum = 0.0;
+	
+	decay = min(0.9, decay);
+	while (amp > 0.05) {
+		sum += noise_snoise(p * freq) * amp;
+		freq *= lacunarity;
+		amp *= decay;
+	}
+	return sum;
+}
+
+
+

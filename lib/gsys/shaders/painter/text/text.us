@@ -1,0 +1,40 @@
+//
+//
+//
+vert:
+in vec3 a_position;
+in vec2 a_texcoord;
+in vec3 a_color;
+in mat4 a_instance_nodetext;
+
+uniform mat4 u_textscreen;
+out vec2 f_texcoord;
+out vec3 f_color;
+
+void main()
+{
+	gl_Position = u_textscreen * a_instance_nodetext * vec4(a_position, 1);
+	f_texcoord = a_texcoord;
+	f_color = a_color;
+}
+
+frag:
+
+uniform sampler2D u_font_texture;
+uniform vec3 u_color;
+uniform float u_smoothstep;
+in vec2 f_texcoord;
+in vec3 f_color;
+layout (location = 0) out vec4 final_color0;
+void main()
+{
+	const float c_cutoff = 0.5;
+	float sdf = textureLod(u_font_texture, f_texcoord, 0).r - c_cutoff;
+	float alpha = smoothstep(-u_smoothstep, +u_smoothstep, sdf);
+	if (alpha < 0.01) discard;
+	final_color0 = vec4(f_color * u_color, alpha);
+}
+
+
+
+

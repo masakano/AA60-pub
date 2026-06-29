@@ -1,0 +1,13 @@
+//
+//
+//
+#define def_use_shadowmap
+#include <decorator/shadowmap/shadowmap.us>
+#include "vert.us"
+
+vert:
+void main()
+{
+	toon_main();
+	shadowmap();
+}

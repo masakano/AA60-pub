@@ -1,0 +1,46 @@
+//
+//
+//
+vert:
+
+
+in vec4 a_position;
+in int a_instance_id;
+
+out VS_OUT
+{
+    vec4 color;
+} vs_out;
+
+struct transform_t
+{
+    mat4 u_modelview;
+    mat4 u_viewscreen;
+};
+
+layout (std140, binding = 0) uniform TRANSFORM_BLOCK
+{
+    transform_t transform[256];
+} t;
+
+void main()
+{
+	//gl_Position = t.transform[gl_InstanceID].u_viewscreen * t.transform[gl_InstanceID].u_modelview * a_position;
+	gl_Position = t.transform[a_instance_id].u_viewscreen * t.transform[gl_InstanceID].u_modelview * a_position;
+	vs_out.color = a_position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);
+}
+
+frag:
+//#version 420 core
+
+out vec4 color;
+
+in VS_OUT
+{
+    vec4 color;
+} fs_in;
+
+void main()
+{
+    color = fs_in.color;
+}

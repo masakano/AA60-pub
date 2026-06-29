@@ -1,0 +1,165 @@
+//
+//
+//
+#define def_use_shadowmap
+#define def_use_pbr_ibl_irradmap
+#define def_use_pbr_ibl_lightmap
+#define def_use_pbr_setup
+
+#include <decorator/material/pbr_material.us>
+#include <decorator/instance/instance.us>
+#include <decorator/shadowmap/shadowmap.us>
+
+vert:
+uniform ivec3 u_grid_box_size; // grid_size - 1
+out ivec3 g_position_grid;
+
+void main()
+{
+	int gx = gl_VertexID % u_grid_box_size.x;
+	int gy = (gl_VertexID / u_grid_box_size.x) % u_grid_box_size.y;
+	int gz = gl_VertexID / (u_grid_box_size.x * u_grid_box_size.y);
+
+	g_position_grid = ivec3(gx, gy, gz);
+}
+
+geom:
+layout(points) in;
+layout(triangle_strip, max_vertices = 32) out;
+
+uniform float u_volume_scale;
+uniform float u_volume_threshold;
+uniform sampler3D u_volume;
+uniform isampler1D u_edges;
+uniform isampler2D u_vertices;
+uniform mat4 u_gridworld;
+
+in ivec3 g_position_grid[];
+out vec3 f_position_view;
+out vec3 f_normal_view;
+
+float get_density(const ivec3 gp)
+{
+	ivec3 texture_size = textureSize(u_volume, 0);
+	ivec3 gp2 = clamp(gp, ivec3(0), texture_size);
+	return texelFetch(u_volume, gp, 0).x * u_volume_scale;
+}
+
+
+vec3 get_position_world(const ivec3 gp)
+{
+	vec4 p = u_gridworld * vec4(gp, 1);
+	return vec3(p / p.w);
+}
+
+vec3 get_normal_world(const ivec3 gp)
+{
+	const ivec3 ux = ivec3(1,0,0);
+	const ivec3 uy = ivec3(0,1,0);
+	const ivec3 uz = ivec3(0,0,1);
+	
+	vec3 pdx = get_position_world(gp + ux) - get_position_world(gp - ux);
+	vec3 pdy = get_position_world(gp + uy) - get_position_world(gp - uy);
+	vec3 pdz = get_position_world(gp + uz) - get_position_world(gp - uz);
+
+	float ddx = get_density(gp + ux) - get_density(gp - ux);
+	float ddy = get_density(gp + uy) - get_density(gp - uy);
+	float ddz = get_density(gp + uz) - get_density(gp - uz);
+
+	float lx = dot(pdx, pdx);
+	float ly = dot(pdy, pdy);
+	float lz = dot(pdz, pdz);
+
+	return -normalize((ddx/lx) * pdx + (ddy/ly) * pdy + (ddz/lz) * pdz);
+}
+
+void main()
+{
+	const ivec3 c_grid_offsets[8] = {
+		ivec3(0, 0, 0), ivec3(0, 1, 0), ivec3(1, 1, 0), ivec3(1, 0, 0),
+		ivec3(0, 0, 1), ivec3(0, 1, 1), ivec3(1, 1, 1), ivec3(1, 0, 1),
+	};
+
+	const int c_edge0_indices[12] = {
+		0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3,
+	};
+
+	const int c_edge1_indices[12] = {
+		1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7,
+	};
+	
+	const ivec2 c_edges[12] = {
+		ivec2(0,1), ivec2(1,2), ivec2(2,3), ivec2(3,0),
+		ivec2(4,5), ivec2(5,6), ivec2(6,7), ivec2(7,4),
+		ivec2(0,4), ivec2(1,5), ivec2(2,6), ivec2(3,7),
+	};
+
+	float cube_densities[8];
+	
+	vec3 positions[12];
+	vec3 normals[12];
+
+	int vertex_index = 0;
+	for (int i = 0; i < 8; i++) {
+		ivec3 gp = g_position_grid[0] + c_grid_offsets[i];
+		cube_densities[i] = get_density(gp) - u_volume_threshold;
+		if (cube_densities[i] < 0) vertex_index |= (1 << i);
+								   
+	}
+	
+	if (vertex_index == 0 || vertex_index == 0xff) return;
+	
+	int edge_flags = texelFetch(u_edges, vertex_index, 0).x;
+
+	for (int i = 0; i < 12; i++) {
+		if ((edge_flags & 1 << i) != 0) {
+
+			int i0 = c_edge0_indices[i];
+			int i1 = c_edge1_indices[i];
+
+			ivec3 gp0 = g_position_grid[0] + c_grid_offsets[i0];
+			ivec3 gp1 = g_position_grid[0] + c_grid_offsets[i1];
+
+			float d0 = abs(cube_densities[i0]);
+			float d1 = abs(cube_densities[i1]);
+			float mu = d0 / (d0 + d1);
+
+			vec3 position0 = get_position_world(gp0);
+			vec3 position1 = get_position_world(gp1);
+
+			vec3 normal0 = get_normal_world(gp0);
+			vec3 normal1 = get_normal_world(gp1);
+
+			positions[i] = mix(position0, position1, mu);
+			normals[i] = normalize(mix(normal0, normal1, mu));
+		}
+	}
+
+	for (int i = 0; i < 16; i++) {
+		int index = texelFetch(u_vertices, ivec2(i, vertex_index), 0).x;
+		if (index == -1) break;
+
+		f_position_view = vec3(ub_composition.worldview * vec4(positions[index], 1));
+		f_normal_view   = mat3(ub_composition.worldview) * normals[index];
+		gl_Position = (ub_composition.viewscreen * ub_composition.worldview) * vec4(positions[index], 1);
+		
+		EmitVertex();
+	}
+	EndPrimitive();
+}
+
+frag:
+in  vec3 f_position_view;
+in  vec3 f_normal_view;
+layout (location = 0) out vec4 final_color0;  
+
+void main()
+{
+	pbr_packet_t p;
+	pbr_setup(p, f_position_view, f_normal_view, vec2(0));
+
+	if (p.albedo.a < ub_material.min_alpha) discard;
+	p.light_radiance *= shadowmap(p.position_view);
+	final_color0 = pbr_exec(p);
+}
+

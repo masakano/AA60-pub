@@ -1,0 +1,37 @@
+//
+//
+//
+#include <canvas/vert.us>
+#define def_gauss_t vec4
+#include <canvas/gauss/gauss_kernel.us>
+
+vert:
+void main()
+{
+	canvas_main();
+}
+
+frag:
+
+in vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0;
+
+uniform vec2 u_footstep;
+uniform float u_variance;
+uniform float u_luminance_threshold;
+
+vec4 gauss_neighbour(float t)
+{
+	vec2 delta = t * u_footstep / u_texture_size;
+	vec2 texcoord = clamp(f_texcoord + delta, vec2(0), vec2(1));
+	vec4 color = gauss_load_color0(texcoord);
+	return max(vec4(0), color - u_luminance_threshold);
+}
+
+void main()
+{
+	final_color0 = gauss_kernel(u_variance);
+}
+
+
+

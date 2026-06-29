@@ -1,0 +1,59 @@
+//
+//
+//
+#include "vert.us"
+#include "geom.us"
+
+frag:
+uniform vec3 u_color1;
+uniform vec3 u_color2;
+uniform sampler2DArray u_number_texture;
+uniform samplerCube u_lightmap;
+uniform int u_ball_index;
+in vec3 f_normal;
+in vec3 f_tangent;
+in vec3 f_bitangent;
+in vec3 f_lightdir;
+in vec3 f_viewdir;
+in vec2 f_texcoord;
+in vec2 f_stcoord;
+out vec4 frag_color;
+
+void main()                                                                        
+{                                                                                      
+	vec3 texcoord = vec3(f_texcoord, float(u_ball_index));
+	vec4 decal_color = texture(u_number_texture, texcoord);
+	vec3 light_color = vec3(1.0, 1.0, 1.0);
+	vec3 normal = normalize(f_normal);
+	vec3 light_dir = normalize(f_lightdir);
+	vec3 view_dir = normalize(f_viewdir);
+	vec3 light_refl = reflect(-light_dir, normal);
+	vec3 view_refl = reflect(-view_dir, normal);
+	vec3 refl_color = texture(u_lightmap, view_refl).rgb;
+	float specular = pow(max(dot(                                                   
+					 light_refl,                                                              
+					 normalize(f_viewdir)                                                  
+					 )+0.1, 0.0), 64.0)*(0.5 - decal_color.a*(1.0-decal_color.r)*0.4);
+	
+	float diffuse = max(dot(normal, light_dir)+0.1, 0.0);
+	
+	const float reflectivity = 0.2;
+	const float ambient = 0.2;
+	
+	float color_switch = (                                                           
+		f_stcoord.t < 0.25 ||                                                 
+		f_stcoord.t > 0.75                                                    
+		)? 0.0 : 1.0;
+	vec3 color = mix(                                                               
+		mix(u_color1, u_color2, color_switch),                                       
+		vec3(1.0, 1.0, 0.9)*decal_color.r,                                           
+		decal_color.a                                                                
+		);
+	frag_color = vec4(                                                               
+		refl_color * reflectivity +                                             
+		color * ambient +                                                       
+		light_color * color * diffuse +                                          
+		light_color * specular,                                                  
+		1.0                                                                     
+		);
+}                                                                                      

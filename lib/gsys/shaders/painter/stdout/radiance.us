@@ -1,0 +1,48 @@
+//
+//
+//
+common:
+#define def_use_projected_radius
+#include <default/math.us>
+#include <decorator/instance/instance.us>
+
+common:
+uniform vec4	u_albedo;
+uniform float	u_min_alpha;
+uniform float	u_point_size;
+uniform bool	u_is_point_sprite;
+uniform sampler2D u_albedomap;
+
+vert:
+in  vec4 a_color;
+out vec4 f_color;
+
+void main()
+{
+	vec4 position_view = instance_position_view();
+	if (u_is_point_sprite == true) {
+		vec4 position_node = instance_position_node();
+		mat4 nodefrag = instance_screenfrag() * instance_nodescreen();
+		vec4 position_frag = nodefrag * position_node;
+		gl_PointSize = projected_radius(nodefrag, position_frag.w, u_point_size);
+	}
+	gl_Position = instance_position_screen();
+	f_color = a_color;
+}
+
+frag:
+
+in  vec4 f_color;
+layout (location = 0) out vec4 final_color0;
+void main ()
+{
+	if (u_is_point_sprite == true) {
+		vec4 tcolor = texture(u_albedomap, gl_PointCoord);
+		if (tcolor.a < u_min_alpha) discard;
+		final_color0 = u_albedo * tcolor * f_color;
+	}
+	else {
+		final_color0 = u_albedo * f_color;
+	}
+}
+

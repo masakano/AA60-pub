@@ -1,0 +1,101 @@
+//
+//
+//
+#define def_use_shadowmap
+#include <decorator/shadowmap/shadowmap.us>
+#include <decorator/instance/instance.us>
+#include <default/ub_light.us>
+
+#include "mmd_common.us"
+
+vert:
+
+void main()
+{
+	instance_animation_set();
+	instance_emit();
+}
+
+frag:
+uniform sampler2D u_diffusemap;
+uniform sampler2D u_spheremap;
+uniform sampler2D u_toonmap;
+
+void modulate_color(inout vec3 color, const MMDTextureModifier mod)
+{
+	color = color * mod.mul.rgb;
+	color = mix(vec3(1.0), color, mod.mul.a);
+
+	// Is this correct?
+	color = color + (color - vec3(1.0)) * mod.add.a;
+	color = clamp(color, vec3(0.0), vec3(1.0)) + mod.add.rgb;
+}
+
+vec4 radiance()
+{
+	vec3 position_view = vertblock_in.position_view.xyz;
+	vec3 normal_view = normalize(vertblock_in.normal_view);
+	vec3 raydir_view = normalize(position_view);
+	vec3 lightdir_view = normalize(ub_light.sources[0].direction);
+	
+	vec3 color = ub_mmd_material.diffuse.rgb * ub_light.sources[0].emission + ub_mmd_material.ambient;
+	float alpha = ub_mmd_material.diffuse.a;
+	
+	if (ub_mmd_material.diffusemap_mode != e_mmd_texture_none) {
+		vec2 diffuse_texcoord = vertblock_in.texcoord.xy;
+		
+		vec4 diffusemap_color4 = texture(u_diffusemap, diffuse_texcoord);
+		vec3 diffusemap_color = diffusemap_color4.rgb;
+		float diffusemap_alpha = diffusemap_color4.a;
+
+		modulate_color(diffusemap_color, ub_mmd_material.diffusemod);
+		
+		color *= diffusemap_color;
+		alpha *= diffusemap_alpha;
+	}
+	if (alpha == 0.0) {
+		discard;
+	}
+
+	if (ub_mmd_material.spheremap_mode != e_mmd_texture_none) {
+		vec2 sphere_texcoord;
+		sphere_texcoord.x = normal_view.x * 0.5 + 0.5;
+		sphere_texcoord.y = 1.0 - (normal_view.y * 0.5 + 0.5);
+		
+		vec3 spheremap_color = texture(u_spheremap, sphere_texcoord).rgb;
+		modulate_color(spheremap_color, ub_mmd_material.spheremod);
+
+		if (ub_mmd_material.spheremap_mode == e_mmd_texture_mul) {
+			color *= spheremap_color;
+		}
+		else if (ub_mmd_material.spheremap_mode == e_mmd_texture_add) {
+			color += spheremap_color;
+		}
+	}
+
+	if (ub_mmd_material.toonmap_mode != e_mmd_texture_none) {
+		float irradiance = max(0.0, dot(normal_view, lightdir_view));
+		if (ub_mmd_material.use_shadowmap != 0) {
+			irradiance *= shadowmap(position_view);
+		}
+		vec3 toonmap_color = texture(u_toonmap, vec2(0.0, 1.0 - irradiance)).rgb;
+		modulate_color(toonmap_color, ub_mmd_material.toonmod);
+		color *= toonmap_color;
+	}
+
+	if (ub_mmd_material.specular_power > 0) {
+		vec3 halfv = normalize(raydir_view + lightdir_view);
+		vec3 specular_color = ub_mmd_material.specular * ub_light.sources[0].emission;
+		
+		color += pow(max(0.0, dot(halfv, normal_view)), ub_mmd_material.specular_power) * specular_color;
+	}
+	return vec4(color, alpha);
+
+}
+
+layout (location = 0) out vec4 final_color0;
+
+void main()
+{
+	final_color0 = radiance();
+}

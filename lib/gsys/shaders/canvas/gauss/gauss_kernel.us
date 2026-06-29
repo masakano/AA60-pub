@@ -1,0 +1,105 @@
+//
+//
+//
+#pragma once
+
+#include <default/ub_begin.h>
+common:
+#include <default/ub_connect.us>
+
+frag:
+
+#define GL_TEXTURE_2D		0x0DE1
+#define GL_TEXTURE_2D_ARRAY	0x8C1A
+
+#ifndef def_gauss_t
+#define def_gauss_t vec4
+#endif
+
+uniform sampler2D u_color0;
+uniform sampler2D u_depth;
+uniform sampler2DArray u_color0_2d_array;
+uniform vec2 u_texture_size;
+uniform uint u_target;
+
+vec4 gauss_texture(sampler2D id, const vec2 texcoord)
+{
+	return textureLod(id, texcoord, 0);
+}
+vec4 gauss_texture(sampler2DArray id, const vec3 texcoord)
+{
+	return textureLod(id, texcoord, 0);
+}
+
+def_gauss_t gauss_load_color0(const vec2 texcoord)
+{
+	def_gauss_t color0;
+	switch (u_target) {
+	case GL_TEXTURE_2D: 
+		color0 = def_gauss_t(gauss_texture(u_color0, texcoord));
+		break;
+	case GL_TEXTURE_2D_ARRAY: 
+		color0 = def_gauss_t(gauss_texture(u_color0_2d_array, vec3(texcoord, ub_connect.sources[0].layer)));
+		break;
+	default:
+		return def_gauss_t(0);
+	}
+	return max(def_gauss_t(0), color0 + ub_connect.sources[0].bias) * ub_connect.sources[0].gain;
+}
+
+float gauss_load_depth0(const vec2 texcoord)
+{
+	switch (u_target) {
+	case GL_TEXTURE_2D:
+		return gauss_texture(u_depth, texcoord).r;		
+	case GL_TEXTURE_2D_ARRAY:
+		return gauss_texture(u_color0_2d_array, vec3(texcoord, ub_connect.sources[0].layer)).w;
+	}
+	return 1.0;
+}
+
+def_gauss_t gauss_neighbour(float t);
+
+def_gauss_t gauss_kernel(float variance)
+{
+	def_gauss_t result = def_gauss_t(0.0);
+	float sum = 0.0;
+	float t0 = 0.0;
+
+	// skip
+	if (variance < 0.5) {
+		return gauss_neighbour(0.0);
+	}
+
+	// cheat
+	float s = 1;
+	while (variance > 32) {
+		variance *= 0.5;
+		s *= 2.0;
+	}
+
+	const float k = -1.0 / (variance * variance);
+	
+	while (true) { 
+
+		const float w0 = exp(k * (t0*t0));
+		const float dt = min(1.0, 1.0 / w0);
+
+		const float t1 = t0 + dt;
+		const float w1 = exp(k * (t1*t1));
+		const float w  = w1 * dt;
+
+		result += gauss_neighbour(+t1 * s) * w;
+		result += gauss_neighbour(-t1 * s) * w;
+		
+		sum += 2 * w;
+		
+		if (w0 < 0.1) break;
+
+		t0 = t1 + dt;
+	}
+	return result / sum;
+}
+
+common: // pop back
+

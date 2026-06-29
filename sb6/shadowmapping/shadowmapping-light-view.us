@@ -1,0 +1,29 @@
+//
+//
+//
+vert:
+//#version 420 core                                              
+                                                               
+void main()                                                
+{                                                              
+    const vec4 vertices[] = vec4[](vec4(-1.0, -1.0, 0.5, 1.0), 
+                                   vec4( 1.0, -1.0, 0.5, 1.0), 
+                                   vec4(-1.0,  1.0, 0.5, 1.0), 
+                                   vec4( 1.0,  1.0, 0.5, 1.0));
+                                                               
+    gl_Position = vertices[gl_VertexID];                       
+}                                                              
+
+frag:
+//#version 420
+
+layout (binding = 0) uniform sampler2D u_depth_texture;
+layout (location = 0) out vec4 color;
+
+void main()
+{
+    //float d = texelFetch(u_depth_texture, ivec2(gl_FragCoord.xy * 3.0) + ivec2(850, 1050), 0).r;
+    float d = texelFetch(u_depth_texture, ivec2(gl_FragCoord.xy * 2.0), 0).r;
+    d = (d - 0.95) * 15.0;
+    color = vec4(d);
+}

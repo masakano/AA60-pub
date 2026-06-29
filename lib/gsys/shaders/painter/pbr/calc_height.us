@@ -1,0 +1,19 @@
+//
+//
+//
+#include <default/noise/fBm.us>
+#include "ub_fbm_height.us"
+
+vert:
+float calc_height()
+{
+	if (ub_fbm_height.use != 0) {
+		float f0 = noise_fBm(vertblock_out.texcoord.xy, ub_fbm_height.lacunarity, ub_fbm_height.decay);
+		float f1 = -abs(f0);
+		return mix(f0, f1, ub_fbm_height.ridge_rate);
+	}
+	else {
+		return texture(u_heightmap, vertblock_out.texcoord.xy).r;
+	}
+}
+common:

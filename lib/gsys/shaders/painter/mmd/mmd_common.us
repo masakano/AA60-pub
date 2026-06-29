@@ -1,0 +1,47 @@
+//
+//
+//
+#pragma once
+
+#include <default/ub_begin.h>
+
+UNIF_NAMESPACE(spu::gs_painter::mmd)
+
+#define e_mmd_radiance_toon 0
+#define e_mmd_radiance_untoon 1
+#define e_mmd_texture_none 0
+#define e_mmd_texture_mul 1
+#define e_mmd_texture_add 2
+#define e_mmd_sub_texture 3
+
+struct MMDTextureModifier {
+	vec4 mul;
+	vec4 add;
+};
+
+UNIF_BEGIN(UB_MMD_MATERIAL)
+{
+	MMDTextureModifier diffusemod;
+	MMDTextureModifier spheremod;
+	MMDTextureModifier toonmod;
+
+	vec4 diffuse;
+	vec3 ambient;
+	float _f1;
+	vec3 specular;
+	float _f2;
+
+	vec4 edge_color;
+	vec2 screen_size;
+	float edge_width;
+	uint edge_flag;
+
+	float specular_power;
+
+	int use_shadowmap;
+	int diffusemap_mode;
+	int spheremap_mode;
+	int toonmap_mode;
+	
+} UNIF_END(ub_mmd_material);
+#include <default/ub_end.h>

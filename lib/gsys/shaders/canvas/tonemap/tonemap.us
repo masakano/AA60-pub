@@ -1,0 +1,60 @@
+//
+//
+//
+#pragma once
+
+#define e_none 0
+#define e_linear 1
+#define e_reinhard 2
+#define e_hugo 3
+#define e_filmic 4
+
+common:
+
+uniform uint u_tonemap_type;
+
+// John Hable, "Uncharted 2 : HDR Lighting"
+vec3 tonemap_filmic(const vec3 x)
+{
+	const float A = 0.15; // Sholder Strength
+	const float B = 0.50; // Linear Strength
+	const float C = 0.10; // Linear Angle
+	const float D = 0.20; // Toe Strength
+	const float E = 0.01; // Toe Numerator
+	const float F = 0.30; // Toe Denominator
+
+	return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
+vec3 tonemap_reinhard(const vec3 x)
+{
+	return x / (vec3(1.0) + x);
+}
+
+vec3 tonemap_hugo(const vec3 x)
+{
+	return vec3(1.0) - exp(-x);
+}
+
+frag:
+uniform float u_tonemap_curve_bias;
+
+vec3 tonemap(const vec3 rgb)
+{
+	switch (u_tonemap_type) {
+	case e_linear: 
+		return rgb;
+	case e_reinhard: 
+		return tonemap_reinhard(rgb);
+	case e_hugo: 
+		return tonemap_hugo(rgb);
+	case e_filmic: 
+		return tonemap_filmic(rgb);
+	default:
+		return rgb;
+	}
+
+}
+common: // pop
+
+

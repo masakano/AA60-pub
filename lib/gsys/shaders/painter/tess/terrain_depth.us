@@ -1,0 +1,24 @@
+//
+//
+//
+#include "terrain_geom.us"
+
+vert:
+void main() { tess_main(); }
+
+tesc:
+void main() { tess_main(); }
+
+tese:
+void main() { tess_main(); }
+
+geom:
+void main() { geom_main(); }
+
+frag:
+
+void main()
+{
+	//gl_FragDepth = 0.0; // debug
+}
+

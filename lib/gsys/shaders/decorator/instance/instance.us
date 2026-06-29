@@ -1,0 +1,96 @@
+//
+//
+//
+#pragma once
+
+#include <default/ub_composition.us>
+#include <default/vertblock.us>
+
+vert:
+
+in vec3 a_position;
+in vec3 a_normal;
+in vec4 a_texcoord;
+in mat4 a_instance_nodeworld;
+
+#if def_use_animation == 1 || def_use_morphing == 1
+#include "instance_animation.us"
+#else
+#ifndef instance_animation_set
+#define instance_animation_set()
+#endif
+#ifndef instance_position_node
+#define instance_position_node() vec4(a_position, 1)
+#endif
+#ifndef instance_normal_node
+#define instance_normal_node() a_normal
+#endif
+#ifndef instance_texcoord
+#define instance_texcoord() a_texcoord
+#endif
+#ifndef instance_nodeworld
+#define instance_nodeworld() a_instance_nodeworld
+#endif
+#endif
+
+#ifndef instance_viewscreen
+#define instance_viewscreen() ub_composition.viewscreen
+#endif
+#ifndef instance_screenfrag
+#define instance_screenfrag() ub_composition.screenfrag
+#endif
+#ifndef instance_worldview
+#define instance_worldview() ub_composition.worldview
+#endif
+
+mat4 instance_worldscreen() { return instance_viewscreen() * instance_worldview(); }
+mat4 instance_nodeview() { return instance_worldview() * instance_nodeworld(); }
+mat4 instance_nodescreen() { return instance_worldscreen() * instance_nodeworld(); }
+vec4 instance_position_world() { return instance_nodeworld() * instance_position_node(); }
+vec4 instance_position_view() { return instance_nodeview() * instance_position_node(); }
+vec4 instance_position_screen() { return instance_nodescreen() * instance_position_node(); }
+vec3 instance_normal_world() { return normalize(mat3(instance_nodeworld()) * instance_normal_node()); }
+vec3 instance_normal_view() { return normalize(mat3(instance_nodeview()) * instance_normal_node()); }
+vec3 instance_normal_screen() { return normalize(mat3(instance_nodescreen()) * instance_normal_node()); }
+
+#ifdef def_use_prev_position
+
+in mat4 a_instance_nodeworld1;
+
+#ifndef instance_worldview1
+#define instance_worldview1() ub_composition.worldview1
+#endif
+#ifndef instance_nodeworld1
+#define instance_nodeworld1() a_instance_nodeworld1
+#endif
+
+mat4 instance_worldscreen1() { return instance_viewscreen() * instance_worldview1(); }
+mat4 instance_nodeview1() { return instance_worldview1() * instance_nodeworld1(); }
+mat4 instance_nodescreen1() { return instance_worldscreen1() * instance_nodeworld1(); }
+vec4 instance_position_world1() { return instance_nodeworld1() * instance_position_node(); }
+vec4 instance_position_view1() { return instance_nodeview1() * instance_position_node(); }
+vec4 instance_position_screen1() { return instance_nodescreen1() * instance_position_node(); }
+vec3 instance_normal_world1() { return normalize(mat3(instance_nodeworld1()) * instance_normal_node()); }
+vec3 instance_normal_view1() { return normalize(mat3(instance_nodeview1()) * instance_normal_node()); }
+vec3 instance_normal_screen1() { return normalize(mat3(instance_nodescreen1()) * instance_normal_node()); }
+
+#endif
+
+void instance_emit()
+{
+	vec4 texcoord = instance_texcoord();
+	vec4 position_view = instance_position_view();
+	vec3 normal_view = instance_normal_view();
+	
+	gl_Position = instance_viewscreen() * position_view;
+
+#ifdef def_use_prev_position	
+	vec4 position_view1 = instance_position_view1();
+	vec3 normal_view1 = instance_normal_view1();
+	EMIT_VERTBLOCK(vertblock_out, texcoord, position_view, normal_view, position_view1, normal_view1);
+#else
+	EMIT_VERTBLOCK(vertblock_out, texcoord, position_view, normal_view);
+#endif	
+}
+
+common:  // pop back

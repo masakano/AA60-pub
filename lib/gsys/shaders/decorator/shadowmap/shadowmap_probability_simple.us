@@ -1,0 +1,19 @@
+//
+//
+//
+#pragma once
+frag:
+
+uniform sampler2DArray u_shadowmap;
+
+float shadowmap_probability(const int layer, vec4 receiver_shadowtexc)
+{
+	receiver_shadowtexc /= receiver_shadowtexc.w;
+	float receiver_depth = receiver_shadowtexc.z;
+	float blocker_depth = texture(u_shadowmap, vec3(receiver_shadowtexc.xy, layer)).r;
+	return (blocker_depth < 1.0 && blocker_depth < receiver_depth)? 0.0: 1.0;
+	//return (blocker_depth < 1.0 && blocker_depth < receiver_depth - 0.00001)? 0.0: 1.0; // need fix
+}
+common:
+
+

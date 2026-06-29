@@ -1,0 +1,152 @@
+//
+//
+//
+#include <canvas/vert.us>
+#include <default/math.us>
+
+#include "ub_cloudy_irradiance.us"
+#define ub ub_cloudy_irradiance
+
+#define FLT_MAX 3.402823466e+38
+vert:
+void main() { canvas_main(); }
+frag:
+
+in  vec2 f_texcoord;
+layout (location = 0) out vec4 final_color0; // Raileigh
+layout (location = 1) out vec4 final_color1; // Mie
+
+#if 1
+const float c_earthRadius = 6370e3;       // In the paper this is usually Rg or Re (radius ground, eart)
+#else
+const float c_earthRadius = 6360e3;       // In the paper this is usually Rg or Re (radius ground, eart)
+#endif                                          // 
+const float c_atmosphereRadius = 6420e3;  // In the paper this is usually R or Ra (radius atmosphere)
+const float c_Hr = 7994;                  // Thickness of the atmosphere if density was uniform (Hr)
+const float c_Hm = 1200;                  // Same as above but for Mie scattering (Hm)
+
+const vec3 c_betaR = vec3(3.8e-6, 13.5e-6, 33.1e-6);
+const vec3 c_betaM = vec3(21e-6);
+
+const uint c_sample_count = /*8*/ 16;
+const uint c_light_sample_count = /*4*/ 8;
+
+void swap(inout float x, inout float y)
+{
+	float t = x; x = y; y = t;
+}
+
+bool ray_sphere_intersect(
+	const vec3 rayorg, const vec3 raydir, const float radius, inout float t0, inout float t1)
+{
+	float alpha = dot(raydir, -rayorg);
+	float dist = length(rayorg);
+	float det = alpha * alpha - (dist * dist - radius * radius);
+
+	if (det > 0) {
+		t0 = (alpha - sqrt(det));
+		t1 = (alpha + sqrt(det));
+		if (t0 > t1) swap(t0, t1);
+		return true;
+	}
+	return false;
+}
+
+// [comment]
+// This is where all the magic happens. We first raymarch along the primary ray (from the camera origin
+// to the point where the ray exits the atmosphere or intersect with the planetory body). For each
+// sample along the primary ray, we then "cast" a light ray and raymarch along that ray as well.
+// We basically shoot a ray in the direction of the sun.
+// [/comment]
+vec3 compute_incident_light(const vec3 rayorg, const vec3 raydir, const vec3 sundir, float tmin, float tmax)
+{
+	float t0, t1;
+	if (!ray_sphere_intersect(rayorg, raydir, c_atmosphereRadius, t0, t1) || t1 < 0) return vec3(0);
+	if (t0 > tmin && t0 > 0) tmin = t0;
+	if (t1 < tmax) tmax = t1;
+
+	float segment_length = (tmax - tmin) / c_sample_count;
+	float tcur = tmin;
+	vec3 sumR = vec3(0);
+	vec3 sumM = vec3(0);  // mie and rayleigh contribution
+	float optical_depthR = 0;
+	float optical_depthM = 0;
+	float mu = dot(raydir, sundir);  // mu in the paper which is the cosine of the angle between the sun
+	                                   // direction and the ray direction
+	float phaseR = 3.f / (16.f * M_PI) * (1 + mu * mu);
+	float g = 0.76f;
+	float phaseM = 3.f / (8.f * M_PI) * ((1.f - g * g) * (1.f + mu * mu))
+	             / ((2.f + g * g) * pow(1.f + g * g - 2.f * g * mu, 1.5f));
+
+	for (uint i = 0; i < c_sample_count; ++i) {
+		vec3 sample_position = rayorg + (tcur + segment_length * 0.5f) * raydir;
+		float height = length(sample_position) - c_earthRadius;
+		float hr = exp(-height / c_Hr) * segment_length;
+		float hm = exp(-height / c_Hm) * segment_length;
+		
+		optical_depthR += hr;
+		optical_depthM += hm;
+		
+		// light optical depth
+		float t0_light;
+		float t1_light;
+		ray_sphere_intersect(sample_position, sundir, c_atmosphereRadius, t0_light, t1_light);
+		
+		float segment_length_light = t1_light / c_light_sample_count;
+		float tcurLight = 0;
+		float optical_depth_lightR = 0;
+		float optical_depth_lightM = 0;
+		uint j;
+		for (j = 0; j < c_light_sample_count; ++j) {
+			vec3 sample_position_light
+			        = sample_position + (tcurLight + segment_length_light * 0.5f) * sundir;
+
+			float height_light = length(sample_position_light) - c_earthRadius;
+			if (height_light < 0) break;
+			optical_depth_lightR += exp(-height_light / c_Hr) * segment_length_light;
+			optical_depth_lightM += exp(-height_light / c_Hm) * segment_length_light;
+			tcurLight += segment_length_light;
+		}
+		if (j == c_light_sample_count) {
+			vec3 tau = c_betaR * (optical_depthR + optical_depth_lightR)
+			          + c_betaM * 1.1 * (optical_depthM + optical_depth_lightM);
+			vec3 attenuation = vec3(exp(-tau.x), exp(-tau.y), exp(-tau.z));
+			sumR += attenuation * hr;
+			sumM += attenuation * hm;
+		}
+		tcur += segment_length;
+	}
+	// [comment]
+	// We use a magic number here for the intensity of the sun (20). We will make it more
+	// scientific in a future revision of this lesson/code
+	// [/comment]
+	// return (sumR * c_betaR * phaseR + sumM * c_betaM * phaseM) * 20;
+	final_color0.rgb = sumR * c_betaR * phaseR * 20;
+	final_color1.rgb = sumM * c_betaM * phaseM * 20;
+	
+}
+
+float atan2(float y, float x)
+{
+	return x == 0.0? sign(y) * M_PI/2: atan(y, x);
+}
+
+void main ()
+{
+	float x = f_texcoord.x * 2.0 - 1.0;
+	float y = f_texcoord.y * 2.0 - 1.0;
+	
+	float z2 = x * x + y * y;
+	if (z2 <= 1.0) {
+		float phi = atan2(y, x);
+		float theta = acos(1 - z2);
+		vec3 raydir = vec3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi));
+		compute_incident_light(vec3(0, c_earthRadius + 1, 0), raydir, ub.sundir, 0, FLT_MAX);
+	}
+}
+
+
+
+
+
+

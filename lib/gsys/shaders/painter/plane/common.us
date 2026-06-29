@@ -1,0 +1,85 @@
+//
+//
+//
+#pragma once
+#define def_use_projected_radius
+#define def_use_shadowmap
+#define def_use_pbr_setup
+
+#include <decorator/material/material.us>
+#include <decorator/material/pbr_material.us>
+#include <decorator/shadowmap/shadowmap.us>
+#include "ub_plane_composition.us" // not <default/ub_composition.us>
+
+frag:
+/*
+  p0, p1: target point direction
+  n0, n1: normal
+  c0, c1: reflect point direction
+
+  L: distance to target from reflect point
+  Lc: distance to reflect point from eye
+
+  p0 = R(n0, -c0) * L + c0 * Lc
+  p1 = R(n1, -c0) * L + c0 * Lc
+  p1 = R(n0, -c1) * L + c1 * Lc
+
+  R(n, d) = 2 * (n * d) * n - d
+
+  cd * Lc = - 2L * ((nd * c0) * (nd + n0)
+
+ */
+vec3 plane_correct_position(const vec3 position, const vec3 normal0, const vec3 normal1)
+{
+	const float L = 0.1; // need parametize
+	vec3 delta_normal = normal1 - normal0;
+	return position - 2 * L * dot(delta_normal, position) * normal1;
+}
+
+uniform sampler2D u_reflectmap;
+
+vec4 plane_reflect_color;
+
+vec3 plane_raydir_view(const vec2 position_screen)
+{
+	vec4 position_view = ub_plane_composition.screenview * vec4(position_screen, 0, 1);
+	return normalize(position_view.xyz);
+}
+
+vec3 plane_cross_point(const vec3 raydir, const vec4 plane_eq)
+{
+	float det0 = dot(plane_eq.xyz, raydir);
+	float det1 = plane_eq.w;
+	if (det0 == 0) discard;
+
+	return raydir * (-det1 / det0);
+}
+
+vec3 plane_view_to_texcoord(const vec3 position_view)
+{
+	vec4 position_screen = ub_plane_composition.viewscreen * vec4(position_view, 1);
+	return (position_screen.xyz / position_screen.w) * 0.5 + 0.5; // [-1,+1] -> [0,+1]
+}
+
+void plane_set_reflect_color(const vec3 position_view, const vec3 normal_view0, const vec3 normal_view1)
+{
+	vec3 correct_position_view = plane_correct_position(position_view, normal_view0, normal_view1);
+	vec3 correct_position_texcoord = plane_view_to_texcoord(correct_position_view);
+	plane_reflect_color = texture(u_reflectmap, correct_position_texcoord.xy);
+}
+
+vec3 pbr_ibl_irradmap(const vec3 raydir_view)
+{
+	if (plane_reflect_color.a != 0) {
+		return plane_reflect_color.rgb;
+	}
+	return texture_irradmap(raydir_view, ub_light.ambient);
+}
+vec3 pbr_ibl_lightmap(const vec3 raydir_view, float roughness)
+{
+	if (plane_reflect_color.a != 0) {
+		return plane_reflect_color.rgb;
+	}
+	return texture_lightmap(raydir_view, roughness, ub_light.ambient);
+}
+common:

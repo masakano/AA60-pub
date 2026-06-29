@@ -1,0 +1,51 @@
+//
+//
+//
+#include <default/ub_connect.us>
+
+vert:
+
+uniform vec2 u_step_size;
+uniform float u_stride;
+
+out vec2 f_texcoord1;
+out vec2 f_texcoord2;
+out vec2 f_texcoord3;
+out vec2 f_texcoord4;
+
+void main()
+{
+	const vec2 positions[4] = {
+		vec2(-1, -1), vec2(+1, -1),
+		vec2(-1, +1), vec2(+1, +1),
+	};
+	vec4 position = vec4(positions[gl_VertexID], 0, 1);
+	vec2 texcoord  = positions[gl_VertexID] * 0.5 + vec2(0.5, 0.5);
+
+	f_texcoord1 = texcoord;
+	f_texcoord2 = texcoord + u_step_size * u_stride; 
+	f_texcoord3 = texcoord + u_step_size * 2.0 * u_stride; 
+	f_texcoord4 = texcoord + u_step_size * 3.0 * u_stride; 
+	gl_Position = position;
+}
+
+frag:
+in vec2 f_texcoord1;
+in vec2 f_texcoord2;
+in vec2 f_texcoord3;
+in vec2 f_texcoord4;
+layout (location = 0) out vec4 final_color0;
+
+uniform sampler2D u_color0;
+uniform vec4 u_color_coeff[4];
+
+void main()
+{
+	final_color0 = 
+		textureLod(u_color0, f_texcoord1, ub_connect.sources[0].level) * u_color_coeff[0] + 
+		textureLod(u_color0, f_texcoord2, ub_connect.sources[0].level) * u_color_coeff[1] + 
+		textureLod(u_color0, f_texcoord3, ub_connect.sources[0].level) * u_color_coeff[2] + 
+		textureLod(u_color0, f_texcoord4, ub_connect.sources[0].level) * u_color_coeff[3];
+
+
+}

@@ -1,0 +1,34 @@
+//
+//
+//
+#pragma once
+
+#include "ub_begin.h"
+
+#define def_ub_shadowmap_max 32
+#define def_ub_shadowmap_pattern_max 128
+
+UNIF_NAMESPACE(spu)
+
+UNIF_BEGIN(UB_SHADOWMAP) {
+	mat4 view_to_shadowtexc[def_ub_shadowmap_max];
+	mat4 worldview;
+	vec3 light_position;
+	float light_radius;
+	int light_type;
+	int layer_count;
+	int viewport_mask;
+	bool enable;
+	
+} UNIF_END(ub_shadowmap);
+
+UNIF_BEGIN(UB_SHADOWMAP_PATTERN) {
+	vec2 blockers[def_ub_shadowmap_pattern_max]; 
+	vec2 receivers[def_ub_shadowmap_pattern_max];
+	int blocker_count;
+	int receiver_count;
+	int _i[2];
+	
+} UNIF_END(ub_shadowmap_pattern);
+
+#include "ub_end.h"

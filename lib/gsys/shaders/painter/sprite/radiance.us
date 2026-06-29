@@ -1,0 +1,63 @@
+//
+//
+//
+vert:
+
+in vec3 a_position;
+in vec4 a_texcoord;
+in vec4 a_color;
+in vec4 a_span;
+
+uniform mat4 u_nodeview;
+uniform mat4 u_viewscreen;
+
+out vec4 g_color;
+out vec4 g_positions[4];
+out vec2 g_texcoords[4];
+
+out  vec2 f_texcoord;
+out  vec4 f_color;
+
+void main()
+{
+	mat4 nodescreen = u_viewscreen * u_nodeview;
+	vec4 position_node = vec4(a_position, 1);
+
+	int ix = (gl_VertexID % 2) * 2;
+	int iy = (gl_VertexID / 2) * 2 + 1;
+
+	float dx = a_span[ix];
+	float dy = a_span[iy];
+	float du = a_texcoord[ix];
+	float dv = a_texcoord[iy];
+
+	vec3 dxy = vec3(dx, dy, 0);
+#if def_use_billboard_sprite == 1	
+	dxy = inverse(mat3(u_nodeview)) * dxy;
+#endif
+	gl_Position = nodescreen * (position_node + vec4(dxy, 0));
+	f_texcoord = vec2(du, dv);
+	f_color = a_color;
+}
+
+frag:
+
+uniform float u_min_alpha;
+uniform sampler2D u_albedomap;
+uniform vec4 u_albedo;
+uniform vec4 u_channel_mask;
+
+in  vec2 f_texcoord;
+in  vec4 f_color;
+
+layout (location = 0) out vec4 final_color0;  // diffuse (for reference)
+
+void main ()
+{
+	vec4 decal_color = texture(u_albedomap, f_texcoord) * u_albedo;
+	final_color0 = f_color * decal_color;
+	if (final_color0.a < u_min_alpha) discard;
+}
+
+
+

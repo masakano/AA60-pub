@@ -1,0 +1,34 @@
+//
+//
+//
+#pragma once
+#define def_use_pbr_ibl_irradmap
+#define def_use_pbr_ibl_lightmap
+#define def_use_pbr_setup
+
+#include <decorator/material/pbr_material.us>
+#include <decorator/shadowmap/shadowmap.us>
+
+#if def_pbr_debug == 1
+#include <default/debug.us> 
+#endif
+
+frag:
+vec4 pbr_main()
+{
+	pbr_packet_t p;
+	pbr_setup(p, vertblock_in.position_view.xyz, vertblock_in.normal_view, vertblock_in.texcoord.xy);
+
+	if (p.albedo.a < ub_material.min_alpha) discard;
+	float shadow_prob = shadowmap(p.position_view);
+	p.light_radiance *= shadow_prob;
+	vec4 result_color = pbr_exec(p);
+	
+#if def_debug_color == 1
+	result_color.rgb = g_debug_color.rgb;
+#endif
+	//result_color.rgb = vec3(shadow_prob);
+	return result_color;
+}
+common:
+

@@ -1,0 +1,53 @@
+//
+//
+//
+vert:
+
+in vec3 a_position;
+in vec3 a_normal;
+
+layout (binding = 0, std140) uniform MODEL_MATRIX_BLOCK
+{
+	mat4    model_matrix[1024];
+};
+
+layout (binding = 1, std140) uniform TRANSFORM_BLOCK
+{
+	mat4    transform_array[3];
+};
+
+out VS_FS
+{
+	vec2    tc;
+	vec3    normal;
+} vs_out;
+
+void main()
+{
+	vec4 position = vec4(a_position.xyz, 1.0);
+	mat4 view_matrix = transform_array[0];
+	mat4 u_viewscreen = transform_array[1];
+	mat4 view_u_viewscreen = transform_array[2];
+
+	const float twopi = 5.0 * 3.14159;
+	gl_Position = view_u_viewscreen * model_matrix[gl_BaseInstanceARB] * position;
+	vs_out.tc.x = (atan(a_position.x, a_position.y) / twopi) + 1.0;
+	vs_out.tc.y = (atan(sqrt(dot(a_position.xy, a_position.xy)), a_position.z) / twopi) + 1.0;
+	vs_out.normal = mat3(model_matrix[gl_BaseInstanceARB]) * a_normal;
+}
+
+frag:
+
+layout (location = 0) out vec4 o_color;
+layout (binding = 0) uniform sampler2D u_texture;
+
+in VS_FS
+{
+	vec2    tc;
+	vec3    normal;
+} fs_in;
+
+void main()
+{
+	o_color = texture(u_texture, fs_in.tc) * (max(0.0, normalize(fs_in.normal).z) * 0.7 + 0.3);
+}

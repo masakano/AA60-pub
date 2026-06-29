@@ -1,0 +1,36 @@
+//
+//
+//
+#pragma once
+
+#include "ub_begin.h"
+
+UNIF_NAMESPACE(spu)
+UNIF_BEGIN(UB_MATERIAL) {
+	vec4 albedo;  // w: alpha
+	vec4 emission;
+
+	float roughness;
+	float metallic;
+	float ao;
+	float gamma;
+
+	float refractvie_index;
+	float absorption_coefficient;
+	float min_alpha;
+	float point_size;
+	
+	float map_scale;
+	float height_scale;
+	uint hash;
+	uint debug_mode;
+
+	bool invisible;
+	bool point_coord;
+	int _i[2];
+	
+} UNIF_END(ub_material);
+
+#include "ub_end.h"
+
+

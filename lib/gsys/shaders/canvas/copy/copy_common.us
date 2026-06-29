@@ -1,0 +1,21 @@
+//
+//
+//
+#pragma once
+
+#include <canvas/vert.us>
+#include <default/ub_connect.us>
+
+#define GL_TEXTURE_2D			uint(0x0DE1)
+#define GL_TEXTURE_2D_ARRAY		uint(0x8C1A)
+#define GL_TEXTURE_CUBE_MAP		uint(0x8513)
+#define GL_TEXTURE_CUBE_MAP_ARRAY	uint(0x9009)
+#define GL_TEXTURE_3D			uint(0x806F)
+#define GL_TEXTURE_RECTANGLE		uint(0x84F5)
+
+common:
+
+
+
+
+

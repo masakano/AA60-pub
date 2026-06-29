@@ -1,0 +1,299 @@
+//
+//
+//
+#pragma once
+
+#include <default/debug.us>
+#include "material.us"
+#include "pbr_material_debug.us"
+
+frag:
+
+#if def_pbr_debug == 1
+vec3 pbr_debug_color = vec3(1.0);
+#endif
+
+
+struct pbr_packet_t {
+	vec3 light_radiance;
+	vec3 light_direction_view;
+	vec3 position_view;
+	vec3 normal_view;
+	vec4 albedo;
+	vec3 ibl_ambient;
+	float roughness;
+	float metallic;
+	float ao;
+
+};
+
+vec3 pbr_ibl_irradmap(const vec3 raydir_view);
+vec3 pbr_ibl_lightmap(const vec3 raydir_view, float roughness);
+
+void pbr_setup(out pbr_packet_t p, const vec3 position_view, const vec3 normal_view, const vec2 texcoord);
+
+float pbr_distribution_ggx(vec3 N, vec3 H, float roughness)
+{
+	const float a = roughness * roughness;
+	const float a2 = a * a;
+	const float NdotH = max(dot(N, H), 0.0);
+	const float NdotH2 = NdotH * NdotH;
+	const float num = a2;
+	
+	float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+	denom = M_PI * denom * denom;
+
+	return num / denom;
+}
+
+float pbr_geometry_schlck_ggx(float NdotV, float roughness)
+{
+	const float r = (roughness + 1.0);
+	const float k = (r * r) / 8.0;
+	const float num = NdotV;
+	const float denom = NdotV * (1.0 - k) + k;
+
+	return num / denom;
+}
+float pbr_geometry_smith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+	const float NdotV = max(dot(N, V), 0.0);
+	const float NdotL = max(dot(N, L), 0.0);
+	const float ggx2 = pbr_geometry_schlck_ggx(NdotV, roughness);
+	const float ggx1 = pbr_geometry_schlck_ggx(NdotL, roughness);
+
+	return ggx1 * ggx2;
+}
+
+vec3 pbr_fresnel_schlick(float cosTheta, vec3 F0)
+{
+	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+vec3 pbr_fresnel_schlick_roughness(float cosTheta, vec3 F0, float roughness)
+{
+	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float pbr_radical_inverse_vdc(uint bits)
+{
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return float(bits) * 2.3283064365386963e-10;  // / 0x100000000
+}
+
+vec2 pbr_hammersley(uint i, uint N)
+{
+	return vec2(float(i) / float(N), pbr_radical_inverse_vdc(i));
+}
+
+vec3 pbr_importance_sample_ggx(vec2 Xi, vec3 N, float roughness)
+{
+	const float a = roughness * roughness;
+
+	const float phi = 2.0 * M_PI * Xi.x;
+	const float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
+	const float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+
+	// from spherical coordinates to cartesian coordinates
+	const vec3 H = vec3(
+		cos(phi) * sin_theta,
+		sin(phi) * sin_theta,
+		cos_theta);
+	
+	// from tangent-space vector to world-space sample vector
+	const vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+	const vec3 tangent = normalize(cross(up, N));
+	const vec3 bitangent = cross(N, tangent);
+
+	const vec3 sample_vec = tangent * H.x + bitangent * H.y + N * H.z;
+	return normalize(sample_vec);
+}
+
+vec2 pbr_integrate_brdf(float NdotV, float roughness)
+{
+	const vec3 V = vec3(
+		sqrt(1.0 - NdotV * NdotV),
+		0.0,
+		NdotV);
+
+	const vec3 N = vec3(0.0, 0.0, 1.0);
+	const uint SAMPLE_COUNT = 1024u;
+
+	float A = 0.0;
+	float B = 0.0;
+	
+	for (uint i = 0u; i < SAMPLE_COUNT; ++i) {
+		vec2 Xi = pbr_hammersley(i, SAMPLE_COUNT);
+		vec3 H = pbr_importance_sample_ggx(Xi, N, roughness);
+		vec3 L = normalize(2.0 * dot(V, H) * H - V);
+
+		const float NdotL = clamp(L.z, 0.0, 1.0);
+		const float NdotH = clamp(H.z, 0.0, 1.0);
+		const float VdotH = clamp(dot(V, H), 0.0, 1.0);
+
+		if (NdotL > 0.0 && NdotV > 0.0) {
+			const float G = pbr_geometry_smith(N, V, L, roughness);
+			const float G_Vis = (G * VdotH) / (NdotH * NdotV);
+			const float Fc = pow(1.0 - VdotH, 5.0);
+			A += (1.0 - Fc) * G_Vis;
+			B += Fc * G_Vis;
+		}
+	}
+	A /= float(SAMPLE_COUNT);
+	B /= float(SAMPLE_COUNT);
+	return vec2(A, B);
+}
+
+uniform sampler2D u_brdfmap;
+
+vec3 pbr_single_light(
+        const vec3 N, const vec3 V, const vec3 L, const vec3 light_radiance, const vec3 albedo,
+        const float metallic, const float roughness)
+{
+	vec3 F0 = vec3(0.04);
+	F0 = mix(F0, albedo, metallic);
+	vec3 H = normalize(V + L);
+
+	const float NDF = pbr_distribution_ggx(N, H, roughness);
+	const float G = pbr_geometry_smith(N, V, L, roughness);
+	const vec3 F = pbr_fresnel_schlick(clamp(dot(H, V), 0.0, 1.0), F0);
+	const vec3 kS = F;
+	
+	vec3 kD = vec3(1.0) - kS;
+	kD *= 1.0 - metallic;
+	kD = max(vec3(0.0), kD);  // fix
+
+	const vec3 numerator = NDF * G * F;
+	const float denominator = 4.0 * clamp(dot(N, V), 0.0, 1.0) * clamp(dot(N, L), 0.0, 1.0);
+
+	const vec3 specular = numerator / max(denominator, 0.001);
+	const float NdotL = clamp(dot(N, L), 0.0, 1.0);
+	
+	const vec3 Lo = (kD * albedo / M_PI + specular) * light_radiance * NdotL;
+
+
+#if def_pbr_debug == 1
+	switch (ub_material.debug_mode) {
+	case e_pbr_debug_single_ndf: pbr_debug_color = vec3(NDF); break;
+	case e_pbr_debug_single_g: pbr_debug_color = vec3(G); break;
+	case e_pbr_debug_single_f: pbr_debug_color = F; break;
+	case e_pbr_debug_single_specular: pbr_debug_color = specular; break;
+	}
+#endif
+	return Lo;
+}
+
+
+vec3 pbr_ibl(
+        const vec3 N, const vec3 V, const vec3 albedo, const float metallic,
+        const float roughness, const float ao, const vec3 ambient)
+{
+	const float NdotV = clamp(dot(N, V), 0.0, 1.0);
+
+	const vec3 R = reflect(-V, N);
+	
+	vec3 F0 = vec3(0.04);
+	F0 = mix(F0, albedo, metallic);
+	
+	const vec3 F = pbr_fresnel_schlick_roughness(NdotV, F0, roughness);
+	const vec3 kS = F;
+	
+	vec3 kD = 1.0 - kS;
+	kD *= 1.0 - metallic;
+
+	const vec3 irradiance = pbr_ibl_irradmap(N);
+	const vec3 diffuse = irradiance * albedo;
+	const vec3 prefiltered_color = pbr_ibl_lightmap(R, roughness);
+	//return prefiltered_color;
+
+	const vec2 brdf = textureLod(u_brdfmap, vec2(NdotV, roughness), 0).rg;
+	const vec3 specular = prefiltered_color * (F * brdf.x + brdf.y);
+	
+	const vec3 result = mix(ambient, kD * diffuse + specular, ao);
+
+#if def_pbr_debug == 1	
+	switch (ub_material.debug_mode) {
+	case e_pbr_debug_ibl_f: pbr_debug_color = F; break;
+	case e_pbr_debug_ibl_irrad: pbr_debug_color = irradiance; break;
+	case e_pbr_debug_ibl_brdf: pbr_debug_color = vec3(brdf, 0); break;
+	case e_pbr_debug_ibl_reflect: pbr_debug_color = prefiltered_color; break;
+	}
+#endif
+	return result;
+}
+
+//
+// public function
+//
+#ifdef def_use_pbr_ibl_irradmap
+vec3 pbr_ibl_irradmap(const vec3 raydir_view)
+{
+	return texture_irradmap(raydir_view, ub_light.ambient);
+}
+#endif
+
+#ifdef def_use_pbr_ibl_lightmap
+vec3 pbr_ibl_lightmap(const vec3 raydir_view, float roughness)
+{
+	return texture_lightmap(raydir_view, roughness, ub_light.ambient);
+	
+}
+#endif
+
+#ifdef def_use_pbr_setup
+void pbr_setup(out pbr_packet_t p,
+	       const vec3 position_view,
+	       const vec3 normal_view,
+	       const vec2 texcoord)
+{
+
+	p.position_view = position_view;
+	p.normal_view = texture_normalmap(texcoord, p.position_view, normal_view);
+	p.albedo = texture_albedomap(texcoord) * ub_material.albedo;
+
+	vec3 arm = texture_armmap(texcoord);
+	p.ao = clamp(arm.r * ub_material.ao, 0.0, 1.0);
+	p.roughness = clamp(arm.g * ub_material.roughness, 0.0, 1.0);
+	p.metallic = clamp(arm.b * ub_material.metallic, 0.0, 1.0);
+
+	p.albedo.rgb = pow(p.albedo.rgb, vec3(ub_material.gamma));
+	p.ibl_ambient = vec3(0);
+	light_direct(ub_light.sources[0], p.position_view, p.light_direction_view, p.light_radiance);
+}
+#endif
+
+vec4 pbr_exec(const pbr_packet_t p)
+{
+	const vec3 L = p.light_direction_view;
+	const vec3 N = p.normal_view;
+	const vec3 V = -normalize(p.position_view);
+	const vec3 albedo = p.albedo.rgb;
+	const vec3 ibl_ambient = pbr_ibl(N, V, albedo, p.metallic, p.roughness, p.ao, p.ibl_ambient);
+	const vec3 single_light = pbr_single_light(
+	        N, V, L, p.light_radiance, albedo, p.metallic, p.roughness);
+
+
+	
+#if def_pbr_debug == 1
+	if (ub_material.debug_mode != 0) {
+		switch (ub_material.debug_mode) {
+		case e_pbr_debug_single: return vec4(single_light, 1); 
+		case e_pbr_debug_ibl: return vec4(ibl_ambient, 1); 
+		case e_pbr_debug_metallic: return vec4(vec3(p.metallic), 1); 
+		case e_pbr_debug_roughness: return vec4(vec3(p.roughness), 1); 
+		case e_pbr_debug_ao: return vec4(vec3(p.ao), 1); 
+		case e_pbr_debug_normal: return vec4(N, 1); 
+		case e_pbr_debug_light_radiance: return vec4(p.light_radiance, 1); 
+		}
+		return vec4(pbr_debug_color, 1);
+	}
+#endif
+	return vec4(ibl_ambient + single_light + ub_material.emission.rgb, p.albedo.a);
+
+}
+
+common:  // pop back

@@ -1,0 +1,26 @@
+common:
+uniform UB_GATHERED {
+	mat4 nodeworld;
+	mat4 worldview;
+	mat4 viewscreen;
+	vec4 colors[8];
+} ub_gathered;
+
+vert:
+
+in vec4 a_position;
+
+void main()
+{
+	gl_Position = (ub_gathered.viewscreen * ub_gathered.worldview * ub_gathered.nodeworld) * a_position;
+}
+
+frag:
+
+in vec4 f_color; 
+layout (location = 0) out vec4 final_color0;
+
+void main()
+{
+	final_color0 = ub_gathered.colors[gl_PrimitiveID % 8];
+}

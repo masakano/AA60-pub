@@ -1,0 +1,76 @@
+//
+//
+//
+#pragma once
+
+vert:
+
+in vec4 a_weight;
+in ivec4 a_bone;
+in float a_generic_morph_rate;
+in int a_generic_morph_type;
+in int a_generic_morph_index;
+
+vec3 animated_position;
+vec3 animated_normal;
+mat4 animated_instance_nodeworld;
+
+#ifndef instance_position_node
+#define instance_position_node() vec4(animated_position, 1)
+#endif
+#ifndef instance_normal_node
+#define instance_normal_node() animated_normal
+#endif
+#ifndef instance_texcoord
+#define instance_texcoord() a_texcoord
+#endif
+#ifndef instance_nodeworld
+#define instance_nodeworld() animated_instance_nodeworld
+#endif
+
+#if def_use_animation == 1
+readonly buffer a_bone_matrices { mat4 m[]; } b_bone_matrices;
+void instance_skin_animation_set()
+{
+	if (def_use_animation != 0) {
+		mat4 m;
+		m  = b_bone_matrices.m[a_bone.x] * a_weight.x;
+		m += b_bone_matrices.m[a_bone.y] * a_weight.y;
+		m += b_bone_matrices.m[a_bone.z] * a_weight.z;
+		m += b_bone_matrices.m[a_bone.w] * a_weight.w;
+		
+		animated_instance_nodeworld = a_instance_nodeworld * m;
+	}
+}
+#endif
+
+#if def_use_morphing == 1
+readonly buffer a_morph_targets { vec4 v[]; } b_morph_targets;
+void instance_morphing_animation_set()
+{
+	if (def_use_morphing != 0) {
+		switch (a_generic_morph_type) {
+		case 1: // position morph
+		{
+			vec4 generic_morph = b_morph_targets.v[a_generic_morph_index];
+			animated_position = a_position + generic_morph.xyz * a_generic_morph_rate;
+			break;
+		}
+		}
+	}
+}
+#endif
+
+void instance_animation_set()
+{
+	animated_position = a_position;
+	animated_normal = a_normal;
+	animated_instance_nodeworld = a_instance_nodeworld;
+
+#if def_use_animation == 1
+	instance_skin_animation_set();
+#endif
+#if def_use_morphing == 1
+	instance_morphing_animation_set();
+#endif	
+}
