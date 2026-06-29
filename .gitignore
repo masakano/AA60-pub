@@ -58,5 +58,4 @@ main
 Video_Codec_SDK_*
 
 # excludes
-!rt2021/menu/mgenplus-1mn-bold.ttf
 !screenshots/*.jpg
