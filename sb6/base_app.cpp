@@ -10,7 +10,10 @@ void BaseApp::end()
 {
 	if (m_isMenu) {
 		ImGui_ImplSpu_NewFrame();
-		ImGui::Begin("Main");
+		auto &style = ImGui::GetStyle();
+		style.Colors[ImGuiCol_WindowBg].w = 0.75f;  
+
+		ImGui::Begin("main", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Checkbox("paused", &m_isPaused);
 		menu();
 		ImGui::End();

@@ -165,7 +165,6 @@ void ImGui_ImplSpu_RenderDrawData(ImDrawData* draw_data)
 		}
 	}
 	Attrs frame_unset_attrs = {
-	        //{"srgb",     srgb_save   },
 	        {"scissor0", scissor_save},
 	};
 	spu_frame_set(-1, frame_unset_attrs);
@@ -283,7 +282,8 @@ bool ImGui_ImplSpu_CreateDeviceObjects(void)
 	          "out vec4 final_color;\n"
 	          "void main()\n"
 	          "{\n"
-	          "	final_color = f_color * texture( u_texture, f_uv.st);\n"
+	          "	final_color = f_color * texture(u_texture, f_uv.st);\n"
+		  "     final_color.rgb = pow(final_color.rgb, vec3(2.2));\n"
 	          "}\n";
 
 	Attrs shader_attrs = {

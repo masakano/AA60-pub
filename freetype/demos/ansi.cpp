@@ -44,7 +44,7 @@ public:
 		m_markup.strikethrough_color = black;
 		m_markup.font = 0;
 
-		File file("data/256colors.txt", "r");
+		File file("assets/256colors.txt", "r");
 		std::string line;
 
 		m_text.getPen() = {10.0, 480.0};

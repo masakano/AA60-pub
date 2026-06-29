@@ -165,7 +165,8 @@
     	  {"floatt_value", 10.},
     };
     //attrs.get() で value を get()
-~~
+~~~
+
 - attrs.trace() は attrs とそこから継承された attrs を追いかけて指定した key-value が正しく伝播しているか確認する
   - "attrts の key-value ごと使用されたかどうかの判定を行う
   - select() で切り出された key もできるだけもとの prefix を保存する
